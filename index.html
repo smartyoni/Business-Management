@@ -50,6 +50,47 @@
     </script>
 
     <style>
+        :root {
+            /* Notion-inspired Color System */
+            --color-gray-50: #fafafa;
+            --color-gray-100: #f4f4f3;
+            --color-gray-200: #e7e5e4;
+            --color-gray-300: #d6d3d1;
+            --color-gray-400: #a8a29e;
+            --color-gray-500: #78716c;
+            --color-gray-600: #57534e;
+            --color-gray-700: #44403c;
+            --color-gray-800: #292524;
+            --color-gray-900: #1c1917;
+
+            --color-blue-50: #eff6ff;
+            --color-blue-100: #dbeafe;
+            --color-blue-500: #3b82f6;
+            --color-blue-600: #2563eb;
+            --color-blue-700: #1d4ed8;
+
+            --color-green-50: #f0fdf4;
+            --color-green-100: #dcfce7;
+            --color-green-500: #22c55e;
+            --color-green-600: #16a34a;
+
+            --color-yellow-50: #fefce8;
+            --color-yellow-100: #fef3c7;
+            --color-yellow-500: #eab308;
+            --color-yellow-600: #ca8a04;
+
+            --color-red-50: #fef2f2;
+            --color-red-100: #fee2e2;
+            --color-red-500: #ef4444;
+            --color-red-600: #dc2626;
+
+            --border-radius: 6px;
+            --border-radius-lg: 12px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -63,8 +104,10 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
+            background-color: var(--color-gray-50);
+            color: var(--color-gray-800);
+            font-size: 14px;
+            line-height: 1.5;
             margin: 0;
             padding: 0;
         }
@@ -97,10 +140,54 @@
 
         .search-box {
             width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 10px 12px;
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--border-radius);
             font-size: 14px;
+            background-color: white;
+            transition: all 0.15s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--color-blue-500);
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+        }
+
+        .search-box::placeholder {
+            color: var(--color-gray-400);
+        }
+
+        /* 일반 입력 필드 스타일 */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="tel"],
+        select,
+        textarea {
+            padding: 10px 12px;
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            background-color: white;
+            transition: all 0.15s ease;
+            color: var(--color-gray-800);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--color-blue-500);
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--color-gray-400);
         }
 
         .building-list {
@@ -213,50 +300,89 @@
         }
 
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 10px 16px;
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.15s ease;
+            background-color: white;
+            color: var(--color-gray-700);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background-color: var(--color-gray-50);
+            border-color: var(--color-gray-400);
         }
 
         .btn-primary {
-            background-color: #2c5aa0;
+            background-color: var(--color-blue-600);
             color: white;
+            border-color: var(--color-blue-600);
         }
 
         .btn-primary:hover {
-            background-color: #1e3f73;
+            background-color: var(--color-blue-700);
+            border-color: var(--color-blue-700);
         }
 
         .btn-secondary {
-            background-color: #6c757d;
-            color: white;
+            background-color: var(--color-gray-100);
+            color: var(--color-gray-700);
+            border-color: var(--color-gray-300);
             margin-left: 10px;
         }
 
         .btn-secondary:hover {
-            background-color: #545b62;
+            background-color: var(--color-gray-200);
+            border-color: var(--color-gray-400);
+        }
+
+        .btn-danger {
+            background-color: var(--color-red-600);
+            color: white;
+            border-color: var(--color-red-600);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--color-red-700);
+            border-color: var(--color-red-700);
+        }
+
+        .btn-success {
+            background-color: var(--color-green-600);
+            color: white;
+            border-color: var(--color-green-600);
+        }
+
+        .btn-success:hover {
+            background-color: var(--color-green-700);
+            border-color: var(--color-green-700);
         }
 
         .building-list {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid var(--color-gray-200);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
             overflow: hidden;
         }
 
         .building-item {
-            padding: 20px;
-            border-bottom: 1px solid #e1e1e1;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--color-gray-200);
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.15s ease;
         }
 
         .building-item:hover {
-            background-color: #f8f9fa;
+            background-color: var(--color-gray-50);
         }
 
         .building-item:last-child {
@@ -338,20 +464,41 @@
             background-color: #e3f2fd;
         }
 
-        .status-empty { background-color: #f8f9fa; border-color: #e1e1e1; }
-        .status-confirmed { background-color: #fff3cd; border-color: #ffc107; color: #856404; }
-        .status-occupied { background-color: #d4edda; border-color: #28a745; color: #155724; }
-        .status-jeonse { background-color: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
-        .status-monthly { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .status-empty {
+            background-color: var(--color-gray-100);
+            border-color: var(--color-gray-300);
+            color: var(--color-gray-600);
+        }
+        .status-confirmed {
+            background-color: var(--color-yellow-100);
+            border-color: var(--color-yellow-500);
+            color: var(--color-yellow-600);
+        }
+        .status-occupied {
+            background-color: var(--color-green-100);
+            border-color: var(--color-green-500);
+            color: var(--color-green-600);
+        }
+        .status-jeonse {
+            background-color: var(--color-blue-100);
+            border-color: var(--color-blue-500);
+            color: var(--color-blue-600);
+        }
+        .status-monthly {
+            background-color: var(--color-red-100);
+            border-color: var(--color-red-500);
+            color: var(--color-red-600);
+        }
 
         /* 모바일 탭 스타일 */
         .mobile-tabs {
             display: none;
             background: white;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--color-gray-200);
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: var(--shadow-sm);
         }
 
         .mobile-tab-buttons {
@@ -360,24 +507,27 @@
 
         .mobile-tab-btn {
             flex: 1;
-            padding: 12px;
+            padding: 16px 12px;
             background: none;
             border: none;
-            border-bottom: 3px solid transparent;
+            border-bottom: 2px solid transparent;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
+            color: var(--color-gray-600);
         }
 
         .mobile-tab-btn.active {
-            color: #2c5aa0;
-            border-bottom-color: #2c5aa0;
-            background-color: #f8f9fa;
+            color: var(--color-blue-600);
+            border-bottom-color: var(--color-blue-600);
+            background-color: var(--color-blue-50);
+            font-weight: 600;
         }
 
         .mobile-tab-btn:not(.active):hover {
-            background-color: #f5f5f5;
+            background-color: var(--color-gray-50);
+            color: var(--color-gray-700);
         }
 
         .mobile-tab-content {
@@ -446,12 +596,35 @@
             .main-content {
                 flex: 1;
                 overflow-y: auto;
-                height: calc(100vh - 60px); /* 탭 높이 제외 */
+                height: calc(100vh - 64px); /* 탭 높이 제외 */
             }
+
             .container {
                 height: 100%;
                 overflow-y: auto;
-                padding: 10px;
+                padding: 12px;
+            }
+
+            /* 모바일에서 버튼 간격 조정 */
+            .btn {
+                padding: 12px 16px;
+                min-height: 44px; /* 터치 친화적 높이 */
+            }
+
+            .btn-secondary {
+                margin-left: 8px;
+            }
+
+            /* 모바일에서 폼 요소 개선 */
+            .form-row,
+            .form-row-3 {
+                gap: 12px;
+                margin-bottom: 16px;
+            }
+
+            /* 모바일에서 카드 간격 조정 */
+            .building-item {
+                padding: 12px 16px;
             }
 
             .units-grid {
