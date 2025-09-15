@@ -1573,7 +1573,14 @@
                                 console.log(`건물 정보 실시간 업데이트: ${snapshot.docs.length}개`);
                                 const buildingInfoObj = {};
                                 snapshot.docs.forEach(doc => {
-                                    buildingInfoObj[doc.id] = doc.data();
+                                    const data = doc.data();
+                                    // buildingId를 키로 사용하여 로컬 데이터 구조와 일치시킴
+                                    if (data.buildingId) {
+                                        buildingInfoObj[data.buildingId] = {
+                                            docId: doc.id,  // Firebase 문서 ID도 저장
+                                            ...data
+                                        };
+                                    }
                                 });
                                 setBuildingInfoData(buildingInfoObj);
 
@@ -2443,19 +2450,14 @@
                         });
                     }
 
-                    const updatedBuildingInfo = {
-                        ...buildingInfoData,
-                        [currentBuildingForInfo.id]: buildingInfoForm
-                    };
-
-                    setBuildingInfoData(updatedBuildingInfo);
-                    localStorage.setItem('buildingInfoData', JSON.stringify(updatedBuildingInfo));
+                    // 실시간 리스너가 자동으로 데이터를 업데이트하므로
+                    // 수동으로 setState와 localStorage 저장을 하지 않음
 
                     // 저장 후 조회모드로 전환
                     setBuildingInfoViewMode(true);
                 } catch (error) {
-                    console.error('건물 정보 저장 오류:', error);
-                    // Firebase 실패시 localStorage만 사용
+                    console.error('건물 정보 Firebase 저장 오류:', error);
+                    // Firebase 실패시에만 localStorage 직접 업데이트
                     const updatedBuildingInfo = {
                         ...buildingInfoData,
                         [currentBuildingForInfo.id]: buildingInfoForm
