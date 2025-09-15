@@ -1,0 +1,3383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매물 관리 시스템</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .app-layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+
+        .sidebar-header h2 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .building-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .building-item {
+            padding: 3px 8px;
+            margin-bottom: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .building-item:hover {
+            background-color: #f0f8ff;
+            border-color: #2c5aa0;
+        }
+
+        .building-item.active {
+            background-color: #e8f5e8;
+            color: #1a1a1a;
+            border-color: #a5d6a7;
+        }
+
+        .building-item.active:hover {
+            background-color: #c8e6c9;
+        }
+
+        .building-name {
+            font-weight: 600;
+            font-size: 12px;
+            color: #1a1a1a;
+        }
+
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+
+        .building-form {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #2c5aa0;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3f73;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+        .building-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .building-item {
+            padding: 20px;
+            border-bottom: 1px solid #e1e1e1;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .building-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .building-item:last-child {
+            border-bottom: none;
+        }
+
+        .building-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 8px;
+        }
+
+        .building-info {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .units-grid {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+
+        .floor-container {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 5px;
+        }
+
+        .floor-label {
+            min-width: 40px;
+            padding: 5px 8px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #666;
+            margin-right: 8px;
+            text-align: center;
+            align-self: flex-start;
+            margin-top: 2px;
+        }
+
+        .units-row {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 3px;
+            flex: 1;
+        }
+
+        .unit-btn {
+            padding: 6px 4px;
+            border: 1px solid #e1e1e1;
+            border-radius: 3px;
+            background-color: #f8f9fa;
+            color: #333;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            min-width: 45px;
+            min-height: 28px;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .unit-btn:hover {
+            border-color: #2c5aa0;
+            background-color: #e3f2fd;
+        }
+
+        .status-empty { background-color: #f8f9fa; border-color: #e1e1e1; }
+        .status-confirmed { background-color: #fff3cd; border-color: #ffc107; color: #856404; }
+        .status-occupied { background-color: #d4edda; border-color: #28a745; color: #155724; }
+        .status-jeonse { background-color: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .status-monthly { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }
+
+        /* 모바일 탭 스타일 */
+        .mobile-tabs {
+            display: none;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .mobile-tab-buttons {
+            display: flex;
+        }
+
+        .mobile-tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mobile-tab-btn.active {
+            color: #2c5aa0;
+            border-bottom-color: #2c5aa0;
+            background-color: #f8f9fa;
+        }
+
+        .mobile-tab-btn:not(.active):hover {
+            background-color: #f5f5f5;
+        }
+
+        .mobile-tab-content {
+            display: none;
+        }
+
+        .mobile-tab-content.active {
+            display: block;
+        }
+
+        /* 컨텍스트 메뉴 스타일 */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 120px;
+            padding: 4px 0;
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .context-menu-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .context-menu-item.danger {
+            color: #dc3545;
+        }
+
+        .context-menu-item.danger:hover {
+            background-color: #fff5f5;
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 4px 0;
+        }
+
+        @media (max-width: 768px) {
+            .app-layout {
+                flex-direction: column;
+                height: 100vh;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-tabs {
+                display: block;
+            }
+
+            .main-content {
+                flex: 1;
+                overflow-y: auto;
+            }
+            .container {
+                height: auto;
+                overflow-y: visible;
+                padding: 10px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .units-row {
+                grid-template-columns: repeat(8, 1fr);
+                gap: 2px;
+            }
+
+            .unit-btn {
+                padding: 5px 3px;
+                font-size: 9px;
+                min-width: 40px;
+                min-height: 25px;
+            }
+
+            .floor-label {
+                min-width: 35px;
+                padding: 4px 6px;
+                font-size: 10px;
+                margin-right: 6px;
+            }
+
+            .status-option {
+                padding: 6px 8px;
+                font-size: 11px;
+                min-width: 50px;
+            }
+        }
+
+        .show-form-btn {
+            background-color: #28a745;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .show-form-btn:hover {
+            background-color: #218838;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+
+        .dong-config {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+
+        .dong-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .dong-name-input {
+            border: 2px solid #e1e1e1;
+            background: white;
+            padding: 8px 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c5aa0;
+            border-radius: 6px;
+            min-width: 120px;
+            transition: border-color 0.3s;
+        }
+
+        .dong-name-input:focus {
+            outline: none;
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+
+        .floors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .floor-config {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
+        .floor-config-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            text-align: center;
+        }
+
+        .floor-inputs {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .floor-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            flex: 1;
+        }
+
+        .floor-input-label {
+            font-size: 11px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .floor-input {
+            width: 40px;
+            padding: 4px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .unit-count-input {
+            width: 40px;
+            padding: 4px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .floor-remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .floor-remove-btn:hover {
+            background-color: #c82333;
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .floors-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 6px;
+            }
+
+            .floor-config {
+                padding: 8px;
+            }
+
+            .floor-input, .unit-count-input {
+                width: 35px;
+                font-size: 12px;
+            }
+        }
+
+        .remove-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-btn:hover {
+            background-color: #c82333;
+        }
+
+        .add-floor-btn {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .add-floor-btn:hover {
+            background-color: #138496;
+            transform: translateY(-1px);
+        }
+
+        .add-dong-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 30px;
+            transition: all 0.3s;
+        }
+
+        .add-dong-btn:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e1e1e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .modal-close:hover {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-section {
+            margin-bottom: 24px;
+        }
+
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .unit-info {
+            background-color: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .unit-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .unit-info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .unit-info-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .unit-info-value {
+            color: #333;
+        }
+
+        .status-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .status-option {
+            padding: 8px 12px;
+            border: 1px solid #e1e1e1;
+            border-radius: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-weight: 500;
+            font-size: 12px;
+            flex: 1;
+            min-width: 60px;
+        }
+
+        .status-option:hover {
+            border-color: #2c5aa0;
+            background-color: #e3f2fd;
+        }
+
+        .status-option.selected {
+            border-color: #2c5aa0;
+            background-color: #2c5aa0;
+            color: white;
+        }
+
+        .status-option.empty.selected { background-color: #6c757d; border-color: #6c757d; }
+        .status-option.confirmed.selected { background-color: #ffc107; border-color: #ffc107; color: #856404; }
+        .status-option.occupied.selected { background-color: #28a745; border-color: #28a745; }
+        .status-option.jeonse.selected { background-color: #17a2b8; border-color: #17a2b8; }
+        .status-option.monthly.selected { background-color: #dc3545; border-color: #dc3545; }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background-color: #545b62;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.empty { background-color: #f8f9fa; color: #6c757d; border: 1px solid #e1e1e1; }
+        .status-badge.confirmed { background-color: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+        .status-badge.occupied { background-color: #d4edda; color: #155724; border: 1px solid #28a745; }
+        .status-badge.jeonse { background-color: #d1ecf1; color: #0c5460; border: 1px solid #17a2b8; }
+        .status-badge.monthly { background-color: #f8d7da; color: #721c24; border: 1px solid #dc3545; }
+
+        .action-select-modal .modal {
+            max-width: 300px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 16px 20px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            background-color: white;
+            color: #333;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            border-color: #2c5aa0;
+            background-color: #f8f9fa;
+            color: #2c5aa0;
+        }
+
+        .action-btn.primary {
+            background-color: #2c5aa0;
+            border-color: #2c5aa0;
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background-color: #1e3f73;
+            border-color: #1e3f73;
+        }
+
+        .unit-number-display {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c5aa0;
+            text-align: center;
+            margin-bottom: 16px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .status-legend {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-legend-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 12px;
+        }
+
+        .status-legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .status-legend-tag {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .status-legend-tag.empty {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            color: #6c757d;
+        }
+
+        .status-legend-tag.confirmed {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        .status-legend-tag.occupied {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .status-legend-tag.jeonse {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
+        .status-legend-tag.monthly {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .status-legend-items {
+                gap: 6px;
+            }
+
+            .status-legend-tag {
+                padding: 5px 12px;
+                font-size: 12px;
+            }
+        }
+
+        .units-grid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .edit-mode-toggle {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #2c5aa0;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .edit-mode-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .unit-btn.edit-mode {
+            position: relative;
+        }
+
+        .unit-btn.edit-mode:hover {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+
+        .add-unit-btn-inline {
+            padding: 15px 10px;
+            border: 2px dashed #2c5aa0;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            color: #2c5aa0;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .add-unit-btn-inline:hover {
+            background-color: #e3f2fd;
+            border-color: #1e3f73;
+        }
+
+        .unit-edit-modal .modal {
+            max-width: 400px;
+        }
+
+        .unit-number-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .unit-number-input:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .detail-form {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .form-field {
+            margin-bottom: 16px;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .form-field textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        .area-input-group {
+            position: relative;
+        }
+
+        .area-display {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #666;
+            pointer-events: none;
+        }
+
+        .area-input-group input {
+            padding-right: 80px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row,
+            .form-row-3 {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .detail-form {
+                max-height: 70vh;
+            }
+        }
+
+        .building-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-edit {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #138496;
+        }
+
+        .delete-confirm-modal .modal {
+            max-width: 400px;
+        }
+
+        .delete-confirm-content {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .delete-confirm-icon {
+            font-size: 48px;
+            color: #dc3545;
+            margin-bottom: 16px;
+        }
+
+        .delete-confirm-text {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .delete-confirm-subtext {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .delete-building-name {
+            font-weight: 600;
+            color: #dc3545;
+        }
+
+        /* 노션 스타일 건물 정보 조회 화면 */
+        .notion-building-info {
+            max-height: 65vh;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .notion-section {
+            margin-bottom: 24px;
+        }
+
+        .notion-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .notion-section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2f3437;
+            padding: 0;
+        }
+
+        .notion-section-icon {
+            font-size: 16px;
+        }
+
+        .notion-properties {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            background-color: #f7f6f3;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #e9e9e7;
+        }
+
+        .notion-property {
+            display: flex;
+            align-items: center;
+            min-height: 36px;
+            background-color: white;
+            transition: background-color 0.1s ease;
+        }
+
+        .notion-property:hover {
+            background-color: #f8f8f7;
+        }
+
+        .notion-property.full-width {
+            flex-direction: column;
+            align-items: stretch;
+            min-height: auto;
+        }
+
+        .notion-property-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 140px;
+            padding: 8px 12px;
+            background-color: #fbfbfa;
+            border-right: 1px solid #e9e9e7;
+            font-size: 14px;
+            font-weight: 500;
+            color: #787774;
+            flex-shrink: 0;
+        }
+
+        .notion-property.full-width .notion-property-label {
+            border-right: none;
+            border-bottom: 1px solid #e9e9e7;
+            background-color: #f7f6f3;
+        }
+
+        .notion-property-icon {
+            font-size: 14px;
+            width: 16px;
+            text-align: center;
+            color: #9b9a97;
+            font-weight: bold;
+        }
+
+        .notion-property-name {
+            font-weight: 500;
+        }
+
+        .notion-property-value {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 14px;
+            min-height: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .notion-property.full-width .notion-property-value {
+            min-height: 60px;
+            align-items: flex-start;
+            padding-top: 12px;
+        }
+
+        .notion-property-value.filled .value-text {
+            color: #2f3437;
+            font-weight: 400;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .notion-property-value.empty .empty-state {
+            color: #9b9a97;
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        /* 스크롤바 스타일 (노션과 유사) */
+        .notion-building-info::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .notion-building-info::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .notion-building-info::-webkit-scrollbar-thumb {
+            background-color: #d3d1ce;
+            border-radius: 4px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .notion-building-info::-webkit-scrollbar-thumb:hover {
+            background-color: #b8b6b3;
+        }
+
+        @media (max-width: 768px) {
+            .notion-property {
+                flex-direction: column;
+                align-items: stretch;
+                min-height: auto;
+            }
+
+            .notion-property-label {
+                min-width: auto;
+                border-right: none;
+                border-bottom: 1px solid #e9e9e7;
+                padding: 8px 12px 6px;
+                background-color: #f7f6f3;
+            }
+
+            .notion-property-value {
+                padding: 6px 12px 8px;
+            }
+
+            .notion-building-info {
+                max-height: 70vh;
+            }
+
+            .notion-section-title {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function PropertyManagement() {
+            const [buildings, setBuildings] = useState([]);
+            const [selectedBuilding, setSelectedBuilding] = useState(null);
+            const [showForm, setShowForm] = useState(false);
+            const [selectedUnit, setSelectedUnit] = useState(null);
+            const [showModal, setShowModal] = useState(false);
+            const [tempStatus, setTempStatus] = useState('');
+            const [unitFormData, setUnitFormData] = useState({});
+            const [showDeleteModal, setShowDeleteModal] = useState(false);
+            const [buildingToDelete, setBuildingToDelete] = useState(null);
+            const [editMode, setEditMode] = useState(false);
+            const [showUnitEditModal, setShowUnitEditModal] = useState(false);
+            const [editingUnit, setEditingUnit] = useState(null);
+            const [newUnitNumber, setNewUnitNumber] = useState('');
+            const [unitDetails, setUnitDetails] = useState({});
+            const [searchTerm, setSearchTerm] = useState('');
+            const [activeTab, setActiveTab] = useState('buildings'); // 'buildings' or 'units'
+            const [showUnitDeleteModal, setShowUnitDeleteModal] = useState(false);
+            const [unitToDelete, setUnitToDelete] = useState(null);
+            const [longPressTimer, setLongPressTimer] = useState(null);
+            const [showBuildingContextMenu, setShowBuildingContextMenu] = useState(false);
+            const [contextMenuPosition, setContextMenuPosition] = useState({x: 0, y: 0});
+            const [contextMenuBuilding, setContextMenuBuilding] = useState(null);
+            const [showBuildingEditModal, setShowBuildingEditModal] = useState(false);
+            const [editingBuildingName, setEditingBuildingName] = useState('');
+            const [buildingLongPressTimer, setBuildingLongPressTimer] = useState(null);
+            const [showUnitContextMenu, setShowUnitContextMenu] = useState(false);
+            const [unitContextMenuPosition, setUnitContextMenuPosition] = useState({x: 0, y: 0});
+            const [contextMenuUnit, setContextMenuUnit] = useState(null);
+            const [isLongPressing, setIsLongPressing] = useState(false);
+            const [showBuildingInfoModal, setShowBuildingInfoModal] = useState(false);
+            const [currentBuildingForInfo, setCurrentBuildingForInfo] = useState(null);
+            const [buildingInfoData, setBuildingInfoData] = useState({});
+            const [buildingInfoForm, setBuildingInfoForm] = useState({});
+            const [buildingInfoViewMode, setBuildingInfoViewMode] = useState(true); // true: 조회모드, false: 편집모드
+            const [buildingConfig, setBuildingConfig] = useState({
+                name: '',
+                dongs: [
+                    {
+                        id: 1,
+                        name: '1동',
+                        floors: [
+                            { floor: 1, unitCount: 4 },
+                            { floor: 2, unitCount: 4 }
+                        ]
+                    }
+                ]
+            });
+
+            // localStorage에서 데이터 불러오기
+            useEffect(() => {
+                const savedBuildings = localStorage.getItem('propertyBuildings');
+                if (savedBuildings) {
+                    setBuildings(JSON.parse(savedBuildings));
+                }
+
+                const savedUnitDetails = localStorage.getItem('unitDetails');
+                if (savedUnitDetails) {
+                    setUnitDetails(JSON.parse(savedUnitDetails));
+                }
+
+                const savedBuildingInfo = localStorage.getItem('buildingInfoData');
+                if (savedBuildingInfo) {
+                    setBuildingInfoData(JSON.parse(savedBuildingInfo));
+                }
+            }, []);
+
+            // 건물 데이터 저장
+            const saveBuildings = (buildingsData) => {
+                localStorage.setItem('propertyBuildings', JSON.stringify(buildingsData));
+                setBuildings(buildingsData);
+            };
+
+            // 건물명 변경 처리
+            const handleBuildingNameChange = (e) => {
+                setBuildingConfig(prev => ({
+                    ...prev,
+                    name: e.target.value
+                }));
+            };
+
+            const addDong = () => {
+                setBuildingConfig(prev => {
+                    const newDong = {
+                        id: prev.dongs.length > 0 ? Math.max(...prev.dongs.map(d => d.id)) + 1 : 1,
+                        name: `${prev.dongs.length + 1}동`,
+                        floors: [{ floor: 1, unitCount: 4 }]
+                    };
+                    return {
+                        ...prev,
+                        dongs: [...prev.dongs, newDong]
+                    };
+                });
+            };
+
+            // 호실 생성 함수
+            const generateUnits = (config) => {
+                const units = [];
+
+                config.dongs.forEach(dong => {
+                    dong.floors.forEach(floorConfig => {
+                        for (let unit = 1; unit <= floorConfig.unitCount; unit++) {
+                            const unitNumber = config.dongs.length > 1
+                                ? `${dong.name}-${floorConfig.floor}${unit.toString().padStart(2, '0')}호`
+                                : `${floorConfig.floor}${unit.toString().padStart(2, '0')}호`;
+
+                            units.push({
+                                id: `${dong.id}-${floorConfig.floor}-${unit}`,
+                                number: unitNumber,
+                                dong: dong.id,
+                                dongName: dong.name,
+                                floor: floorConfig.floor,
+                                unit: unit,
+                                status: 'empty'
+                            });
+                        }
+                    });
+                });
+
+                return units;
+            };
+
+            // 건물 추가
+            const handleSubmit = (e) => {
+                e.preventDefault();
+
+                const units = generateUnits(buildingConfig);
+
+                const newBuilding = {
+                    id: Date.now(),
+                    name: buildingConfig.name,
+                    config: buildingConfig,
+                    units: units,
+                    createdAt: new Date().toLocaleDateString()
+                };
+
+                const updatedBuildings = [...buildings, newBuilding];
+                saveBuildings(updatedBuildings);
+
+                // 폼 초기화
+                resetBuildingConfig();
+                setShowForm(false);
+            };
+
+            // 건물 선택
+            const selectBuilding = (building) => {
+                setSelectedBuilding(building);
+                setShowForm(false);
+                setActiveTab('units'); // 모바일에서 건물 선택 시 units 탭으로 이동
+            };
+
+            // 호실 버튼 렌더링
+            const renderUnits = () => {
+                if (!selectedBuilding) return null;
+
+                const unitsByDongAndFloor = {};
+
+                selectedBuilding.units.forEach(unit => {
+                    const key = `${unit.dong}-${unit.floor}`;
+                    if (!unitsByDongAndFloor[key]) {
+                        unitsByDongAndFloor[key] = [];
+                    }
+                    unitsByDongAndFloor[key].push(unit);
+                });
+
+                return Object.keys(unitsByDongAndFloor)
+                    .sort((a, b) => {
+                        const [dongA, floorA] = a.split('-').map(Number);
+                        const [dongB, floorB] = b.split('-').map(Number);
+                        if (dongA !== dongB) return dongA - dongB;
+                        return floorB - floorA; // 높은 층부터
+                    })
+                    .map(key => {
+                        const [dong, floor] = key.split('-').map(Number);
+                        const units = unitsByDongAndFloor[key].sort((a, b) => a.unit - b.unit);
+                        const dongConfig = selectedBuilding.config.dongs.find(d => d.id === dong);
+
+                        // 호실을 10개씩 청크로 나누기
+                        const unitChunks = [];
+                        for (let i = 0; i < units.length; i += 10) {
+                            unitChunks.push(units.slice(i, i + 10));
+                        }
+
+                        return (
+                            <div key={key} className="floor-container">
+                                <div className="floor-label">
+                                    {units[0]?.dongName && selectedBuilding.config?.dongs.length > 1 ? `${units[0].dongName} ` : ''}{floor}층
+                                </div>
+                                <div style={{flex: 1}}>
+                                    {unitChunks.map((chunk, chunkIndex) => (
+                                        <div key={chunkIndex} className="units-row" style={{marginBottom: chunkIndex === unitChunks.length - 1 ? 0 : '3px'}}>
+                                            {chunk.map(unit => (
+                                                <button
+                                                    key={unit.id}
+                                                    className={`unit-btn status-${unit.status} ${editMode ? 'edit-mode' : ''}`}
+                                                    onClick={() => handleUnitClick(unit)}
+                                                    onContextMenu={(e) => handleUnitRightClick(e, unit)}
+                                                    onMouseDown={(e) => handleLongPressStart(e, unit)}
+                                                    onMouseUp={handleLongPressEnd}
+                                                    onMouseLeave={handleLongPressEnd}
+                                                    onTouchStart={(e) => handleLongPressStart(e, unit)}
+                                                    onTouchEnd={handleLongPressEnd}
+                                                    title={editMode ? "우클릭 또는 길게 눌러서 메뉴" : unit.number}
+                                                >
+                                                    {unit.number}
+                                                </button>
+                                            ))}
+                                            {/* 마지막 청크의 마지막 줄에만 호실 추가 버튼 표시 */}
+                                            {editMode && chunkIndex === unitChunks.length - 1 && (
+                                                <button
+                                                    className="add-unit-btn-inline"
+                                                    onClick={() => addNewUnit(floor, dongConfig)}
+                                                    title="호실 추가"
+                                                >
+                                                    + 호실
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    });
+            };
+
+            // 건물 설정 초기화
+            const resetBuildingConfig = () => {
+                setBuildingConfig({
+                    name: '',
+                    dongs: [
+                        {
+                            id: 1,
+                            name: '1동',
+                            floors: [
+                                { floor: 1, unitCount: 4 },
+                                { floor: 2, unitCount: 4 }
+                            ]
+                        }
+                    ]
+                });
+            };
+
+            // 상태 한글명 매핑
+            const statusLabels = {
+                empty: '공실',
+                confirmed: '확인필요',
+                occupied: '입주',
+                jeonse: '전세',
+                monthly: '월세'
+            };
+
+            // 호실 클릭 처리
+            const handleUnitClick = (unit) => {
+                if (editMode) {
+                    setEditingUnit(unit);
+                    setNewUnitNumber(unit.number);
+                    setShowUnitEditModal(true);
+                } else {
+                    setSelectedUnit(unit);
+                    setTempStatus(unit.status);
+                    setUnitFormData(getUnitDetails(unit.id));
+                    setShowModal(true);
+                }
+            };
+
+            // 호실 길게 누르기 시작
+            const handleLongPressStart = (e, unit) => {
+                if (!editMode) return;
+
+                const timer = setTimeout(() => {
+                    // 터치 위치 또는 버튼 중앙에 컨텍스트 메뉴 표시
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = rect.left + rect.width / 2;
+                    const y = rect.top + rect.height / 2;
+
+                    setUnitContextMenuPosition({ x, y });
+                    setContextMenuUnit(unit);
+                    setShowUnitContextMenu(true);
+                }, 1200); // 1.2초
+
+                setLongPressTimer(timer);
+            };
+
+            // 길게 누르기 종료
+            const handleLongPressEnd = () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    setLongPressTimer(null);
+                }
+            };
+
+            // 호실 우클릭 컨텍스트 메뉴
+            const handleUnitRightClick = (e, unit) => {
+                if (!editMode) return;
+
+                e.preventDefault();
+                setUnitContextMenuPosition({
+                    x: e.clientX,
+                    y: e.clientY
+                });
+                setContextMenuUnit(unit);
+                setShowUnitContextMenu(true);
+            };
+
+            // 호실 컨텍스트 메뉴 닫기
+            const closeUnitContextMenu = () => {
+                setShowUnitContextMenu(false);
+                setContextMenuUnit(null);
+            };
+
+            // 호실 수정 시작 (컨텍스트 메뉴에서)
+            const startEditUnitFromContext = () => {
+                if (contextMenuUnit) {
+                    setEditingUnit(contextMenuUnit);
+                    setNewUnitNumber(contextMenuUnit.number);
+                    setShowUnitEditModal(true);
+                    closeUnitContextMenu();
+                }
+            };
+
+            // 호실 삭제 시작 (컨텍스트 메뉴에서)
+            const deleteUnitFromContext = () => {
+                if (contextMenuUnit) {
+                    setUnitToDelete(contextMenuUnit);
+                    setShowUnitDeleteModal(true);
+                    closeUnitContextMenu();
+                }
+            };
+
+            // 호실 삭제 확인 모달 닫기
+            const closeUnitDeleteModal = () => {
+                setShowUnitDeleteModal(false);
+                setUnitToDelete(null);
+            };
+
+            // 호실 삭제 확인
+            const confirmDeleteUnit = () => {
+                if (unitToDelete) {
+                    deleteUnit(unitToDelete);
+                    closeUnitDeleteModal();
+                }
+            };
+
+            // 건물 우클릭 컨텍스트 메뉴
+            const handleBuildingRightClick = (e, building) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                setContextMenuPosition({
+                    x: e.clientX,
+                    y: e.clientY
+                });
+                setContextMenuBuilding(building);
+                setShowBuildingContextMenu(true);
+            };
+
+            // 컨텍스트 메뉴 닫기
+            const closeBuildingContextMenu = () => {
+                setShowBuildingContextMenu(false);
+                setContextMenuBuilding(null);
+            };
+
+            // 건물 이름 수정 시작
+            const startEditBuildingName = () => {
+                if (contextMenuBuilding) {
+                    setEditingBuildingName(contextMenuBuilding.name);
+                    setShowBuildingEditModal(true);
+                    closeBuildingContextMenu();
+                }
+            };
+
+            // 건물 이름 수정 취소
+            const cancelEditBuildingName = () => {
+                setShowBuildingEditModal(false);
+                setEditingBuildingName('');
+            };
+
+            // 건물 이름 수정 저장
+            const saveBuildingName = () => {
+                if (!contextMenuBuilding || !editingBuildingName.trim()) return;
+
+                const updatedBuildings = buildings.map(building =>
+                    building.id === contextMenuBuilding.id
+                        ? { ...building, name: editingBuildingName.trim() }
+                        : building
+                );
+
+                saveBuildings(updatedBuildings);
+
+                // 현재 선택된 건물이 수정된 건물이면 업데이트
+                if (selectedBuilding?.id === contextMenuBuilding.id) {
+                    setSelectedBuilding({ ...selectedBuilding, name: editingBuildingName.trim() });
+                }
+
+                cancelEditBuildingName();
+            };
+
+            // 컨텍스트 메뉴에서 건물 삭제
+            const deleteBuildingFromContext = () => {
+                if (contextMenuBuilding) {
+                    setBuildingToDelete(contextMenuBuilding);
+                    setShowDeleteModal(true);
+                    closeBuildingContextMenu();
+                }
+            };
+
+            // 건물 길게 누르기 시작
+            const handleBuildingLongPressStart = (e, building) => {
+                setIsLongPressing(true);
+
+                const timer = setTimeout(() => {
+                    // 모바일에서는 터치 위치를 중앙에 표시
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = rect.left + rect.width / 2;
+                    const y = rect.top + rect.height / 2;
+
+                    setContextMenuPosition({ x, y });
+                    setContextMenuBuilding(building);
+                    setShowBuildingContextMenu(true);
+                    setIsLongPressing(false);
+                }, 1200); // 1.2초
+
+                setBuildingLongPressTimer(timer);
+            };
+
+            // 건물 길게 누르기 종료
+            const handleBuildingLongPressEnd = () => {
+                if (buildingLongPressTimer) {
+                    clearTimeout(buildingLongPressTimer);
+                    setBuildingLongPressTimer(null);
+                }
+                // 짧은 딜레이 후 플래그 리셋 (클릭 이벤트와 충돌 방지)
+                setTimeout(() => setIsLongPressing(false), 100);
+            };
+
+            // 모달 닫기
+            const closeModal = () => {
+                setShowModal(false);
+                setSelectedUnit(null);
+                setTempStatus('');
+                setUnitFormData({});
+            };
+
+            // 통합 저장
+            const handleSaveAllAndClose = () => {
+                if (!selectedUnit || !selectedBuilding) return;
+
+                // 1. 상태 변경 저장
+                const updatedBuilding = {
+                    ...selectedBuilding,
+                    units: selectedBuilding.units.map(unit =>
+                        unit.id === selectedUnit.id
+                            ? { ...unit, status: tempStatus }
+                            : unit
+                    )
+                };
+                const updatedBuildings = buildings.map(building =>
+                    building.id === selectedBuilding.id ? updatedBuilding : building
+                );
+                saveBuildings(updatedBuildings);
+                setSelectedBuilding(updatedBuilding);
+
+                // 2. 상세 정보 저장
+                saveUnitDetails(selectedUnit.id, unitFormData);
+
+                closeModal();
+            };
+
+            // 건물 삭제 모달 열기
+            const openDeleteModal = (building, event) => {
+                event.stopPropagation(); // 건물 선택 이벤트 방지
+                setBuildingToDelete(building);
+                setShowDeleteModal(true);
+            };
+
+            // 건물 삭제 모달 닫기
+            const closeDeleteModal = () => {
+                setShowDeleteModal(false);
+                setBuildingToDelete(null);
+            };
+
+            // 건물 삭제 실행
+            const deleteBuilding = () => {
+                if (!buildingToDelete) return;
+
+                const updatedBuildings = buildings.filter(
+                    building => building.id !== buildingToDelete.id
+                );
+
+                saveBuildings(updatedBuildings);
+
+                if (selectedBuilding && selectedBuilding.id === buildingToDelete.id) {
+                    setSelectedBuilding(null);
+                }
+
+                closeDeleteModal();
+            };
+
+            // 호실 삭제
+            const deleteUnit = (unitToDelete, event) => {
+                event.stopPropagation();
+
+                const updatedBuilding = {
+                    ...selectedBuilding,
+                    units: selectedBuilding.units.filter(unit => unit.id !== unitToDelete.id)
+                };
+
+                const updatedBuildings = buildings.map(building =>
+                    building.id === selectedBuilding.id ? updatedBuilding : building
+                );
+
+                saveBuildings(updatedBuildings);
+                setSelectedBuilding(updatedBuilding);
+            };
+
+            // 새 호실 추가
+            const addNewUnit = (floor, dong) => {
+                const unitsInFloor = selectedBuilding.units.filter(
+                    unit => unit.floor === floor && unit.dong === dong.id
+                );
+                const nextUnitNumber = unitsInFloor.length + 1;
+                const unitNumber = selectedBuilding.config.dongs.length > 1
+                    ? `${dong.name}-${floor}${nextUnitNumber.toString().padStart(2, '0')}호`
+                    : `${floor}${nextUnitNumber.toString().padStart(2, '0')}호`;
+
+                const newUnit = {
+                    id: `${dong.id}-${floor}-${Date.now()}`,
+                    number: unitNumber,
+                    dong: dong.id,
+                    dongName: dong.name,
+                    floor: floor,
+                    unit: nextUnitNumber,
+                    status: 'empty'
+                };
+
+                const updatedBuilding = {
+                    ...selectedBuilding,
+                    units: [...selectedBuilding.units, newUnit]
+                };
+
+                const updatedBuildings = buildings.map(building =>
+                    building.id === selectedBuilding.id ? updatedBuilding : building
+                );
+
+                saveBuildings(updatedBuildings);
+                setSelectedBuilding(updatedBuilding);
+            };
+
+            // 호실 번호 수정
+            const updateUnitNumber = () => {
+                if (!editingUnit || !newUnitNumber.trim()) return;
+
+                const updatedBuilding = {
+                    ...selectedBuilding,
+                    units: selectedBuilding.units.map(unit =>
+                        unit.id === editingUnit.id
+                            ? { ...unit, number: newUnitNumber.trim() }
+                            : unit
+                    )
+                };
+
+                const updatedBuildings = buildings.map(building =>
+                    building.id === selectedBuilding.id ? updatedBuilding : building
+                );
+
+                saveBuildings(updatedBuildings);
+                setSelectedBuilding(updatedBuilding);
+                closeUnitEditModal();
+            };
+
+            // 호실 편집 모달 닫기
+            const closeUnitEditModal = () => {
+                setShowUnitEditModal(false);
+                setEditingUnit(null);
+                setNewUnitNumber('');
+            };
+
+            // 호실 상세 정보 저장
+            const saveUnitDetails = (unitId, details) => {
+                const updatedDetails = {
+                    ...unitDetails,
+                    [unitId]: details
+                };
+                setUnitDetails(updatedDetails);
+                localStorage.setItem('unitDetails', JSON.stringify(updatedDetails));
+            };
+
+            // 호실 상세 정보 가져오기
+            const getUnitDetails = (unitId) => {
+                return unitDetails[unitId] || {
+                    storeName: '',
+                    storeNumber: '',
+                    ownerName: '',
+                    ownerPhone: '',
+                    desiredRent: '',
+                    currentRent: '',
+                    premium: '',
+                    exclusiveArea: '',
+                    supplyArea: '',
+                    doorDirection: '',
+                    roadPosition: '',
+                    memo: ''
+                };
+            };
+
+            // 면적 계산 함수 (제곱미터 → 평)
+            const convertToPyeong = (sqm) => {
+                if (!sqm || sqm === '') return '';
+                const pyeong = (parseFloat(sqm) / 3.3058).toFixed(1);
+                return `(${pyeong}평)`;
+            };
+
+            // 한글 자모순 정렬 함수
+            const koreanSort = (a, b) => {
+                return a.name.localeCompare(b.name, 'ko-KR');
+            };
+
+            // CSV 내보내기 함수
+            const exportToCSV = () => {
+                if (buildings.length === 0) {
+                    alert('내보낼 건물 데이터가 없습니다.');
+                    return;
+                }
+
+                // CSV 헤더
+                const headers = [
+                    '건물명', '소재지', '지번', '총층수', '주차대수', '관리비', '주차비',
+                    '동명', '층', '호실번호', '점유상태',
+                    '상호', '매장번호', '소유자명', '소유자번호',
+                    '희망임대료', '현재임대료', '권리금',
+                    '전용면적(㎡)', '전용면적(평)', '공급면적(㎡)', '공급면적(평)',
+                    '출입문방향', '대로기준위치', '메모'
+                ];
+
+                // CSV 데이터 생성
+                const csvData = [];
+                csvData.push(headers.join(','));
+
+                buildings.forEach(building => {
+                    const buildingInfo = getBuildingInfo(building.id);
+
+                    building.units.forEach(unit => {
+                        const details = getUnitDetails(unit.id);
+
+                        // 면적 계산
+                        const exclusivePyeong = details.exclusiveArea ? (parseFloat(details.exclusiveArea) / 3.3058).toFixed(1) : '';
+                        const supplyPyeong = details.supplyArea ? (parseFloat(details.supplyArea) / 3.3058).toFixed(1) : '';
+
+                        const row = [
+                            building.name,
+                            buildingInfo?.address || '',
+                            buildingInfo?.lotNumber || '',
+                            buildingInfo?.totalFloors || '',
+                            buildingInfo?.parkingSpaces || '',
+                            buildingInfo?.managementFee || '',
+                            buildingInfo?.parkingFee || '',
+                            unit.dongName || '',
+                            unit.floor,
+                            unit.number,
+                            statusLabels[unit.status],
+                            details.storeName || '',
+                            details.storeNumber || '',
+                            details.ownerName || '',
+                            details.ownerPhone || '',
+                            details.desiredRent || '',
+                            details.currentRent || '',
+                            details.premium || '',
+                            details.exclusiveArea || '',
+                            exclusivePyeong,
+                            details.supplyArea || '',
+                            supplyPyeong,
+                            details.doorDirection || '',
+                            details.roadPosition || '',
+                            details.memo || ''
+                        ];
+
+                        // CSV 특수문자 처리 (쉼표, 따옴표, 개행문자 이스케이프)
+                        const escapedRow = row.map(field => {
+                            if (typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
+                                return `"${field.replace(/"/g, '""')}"`;
+                            }
+                            return field;
+                        });
+
+                        csvData.push(escapedRow.join(','));
+                    });
+                });
+
+                // CSV 파일 다운로드
+                const csvContent = csvData.join('\n');
+                const BOM = '\uFEFF'; // UTF-8 BOM for Excel compatibility
+                const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+
+                const now = new Date();
+                const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+                const timeStr = now.toTimeString().slice(0, 5).replace(/:/g, '');
+
+                link.setAttribute('download', `매물관리_${dateStr}_${timeStr}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                alert(`${buildings.length}개 건물, 총 ${buildings.reduce((sum, b) => sum + b.units.length, 0)}개 호실 데이터를 CSV로 내보냈습니다.`);
+            };
+
+            // 건물 정보 관련 함수들
+            const getBuildingInfo = (buildingId) => {
+                return buildingInfoData[buildingId] || null;
+            };
+
+            const openBuildingInfoModal = (building) => {
+                setCurrentBuildingForInfo(building);
+                const existingInfo = getBuildingInfo(building.id);
+                const hasInfo = existingInfo && Object.keys(existingInfo).length > 0;
+
+                // 정보가 있으면 조회모드, 없으면 편집모드로 시작
+                setBuildingInfoViewMode(hasInfo);
+
+                setBuildingInfoForm(existingInfo || {
+                    address: '서울특별시 강서구 마곡동',
+                    lotNumber: '',
+                    approvalDate: '',
+                    totalFloors: '',
+                    parkingSpaces: '',
+                    elevators: '',
+                    managementFee: '',
+                    parkingFee: '',
+                    managementOffice: '',
+                    specialNotes: ''
+                });
+                setShowBuildingInfoModal(true);
+            };
+
+            const closeBuildingInfoModal = () => {
+                setShowBuildingInfoModal(false);
+                setCurrentBuildingForInfo(null);
+                setBuildingInfoForm({});
+                setBuildingInfoViewMode(true);
+            };
+
+            const saveBuildingInfo = () => {
+                if (!currentBuildingForInfo) return;
+
+                const updatedBuildingInfo = {
+                    ...buildingInfoData,
+                    [currentBuildingForInfo.id]: buildingInfoForm
+                };
+
+                setBuildingInfoData(updatedBuildingInfo);
+                localStorage.setItem('buildingInfoData', JSON.stringify(updatedBuildingInfo));
+
+                // 저장 후 조회모드로 전환
+                setBuildingInfoViewMode(true);
+            };
+
+            const handleBuildingInfoChange = (field, value) => {
+                setBuildingInfoForm(prev => ({
+                    ...prev,
+                    [field]: value
+                }));
+            };
+
+            // 필터된 건물 목록
+            const filteredBuildings = buildings
+                .filter(building => building.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                .sort(koreanSort);
+
+            // 컨텍스트 메뉴 외부 클릭 시 닫기
+            React.useEffect(() => {
+                const handleClickOutside = (e) => {
+                    if (showBuildingContextMenu) {
+                        closeBuildingContextMenu();
+                    }
+                    if (showUnitContextMenu) {
+                        closeUnitContextMenu();
+                    }
+                };
+
+                document.addEventListener('click', handleClickOutside);
+                return () => document.removeEventListener('click', handleClickOutside);
+            }, [showBuildingContextMenu, showUnitContextMenu]);
+
+            return (
+                <div className="app-layout">
+                    {/* 모바일 탭 네비게이션 */}
+                    <div className="mobile-tabs">
+                        <div className="mobile-tab-buttons">
+                            <button
+                                className={`mobile-tab-btn ${activeTab === 'buildings' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('buildings')}
+                            >
+                                건물 목록
+                            </button>
+                            <button
+                                className={`mobile-tab-btn ${activeTab === 'units' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('units')}
+                            >
+                                호실 정보
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 사이드바 */}
+                    <div className="sidebar">
+                        <div className="sidebar-header">
+                            <h2>건물 목록</h2>
+                            <input
+                                type="text"
+                                className="search-box"
+                                placeholder="건물명 검색..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            <div style={{
+                                marginTop: '10px',
+                                display: 'flex',
+                                gap: '6px'
+                            }}>
+                                <button
+                                    className="btn btn-primary"
+                                    style={{
+                                        flex: 1,
+                                        padding: '8px 12px',
+                                        fontSize: '13px',
+                                        fontWeight: '600'
+                                    }}
+                                    onClick={() => {
+                                        setSelectedBuilding(null);
+                                        setShowForm(true);
+                                    }}
+                                >
+                                    + 추가
+                                </button>
+                                <button
+                                    className="btn btn-secondary"
+                                    style={{
+                                        flex: 1,
+                                        padding: '8px 12px',
+                                        fontSize: '13px',
+                                        fontWeight: '600'
+                                    }}
+                                    onClick={exportToCSV}
+                                >
+                                    📄 CSV백업
+                                </button>
+                            </div>
+                        </div>
+                        <div className="building-list">
+                            {filteredBuildings.map(building => {
+                                return (
+                                    <div
+                                        key={building.id}
+                                        className={`building-item ${selectedBuilding?.id === building.id ? 'active' : ''}`}
+                                        onClick={() => setSelectedBuilding(building)}
+                                        onContextMenu={(e) => handleBuildingRightClick(e, building)}
+                                        onTouchStart={(e) => handleBuildingLongPressStart(e, building)}
+                                        onTouchEnd={handleBuildingLongPressEnd}
+                                        onMouseDown={(e) => handleBuildingLongPressStart(e, building)}
+                                        onMouseUp={handleBuildingLongPressEnd}
+                                        onMouseLeave={handleBuildingLongPressEnd}
+                                        title="우클릭 또는 길게 눌러서 메뉴 열기"
+                                    >
+                                        <div className="building-name">{building.name}</div>
+                                    </div>
+                                );
+                            })}
+                            {filteredBuildings.length === 0 && (
+                                <div style={{padding: '20px', textAlign: 'center', color: '#666'}}>
+                                    {searchTerm ? '검색 결과가 없습니다' : '등록된 건물이 없습니다'}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 메인 컨텐츠 */}
+                    <div className="main-content">
+                        {/* 모바일 탭 컨텐츠 - 건물 목록 */}
+                        <div className={`mobile-tab-content ${activeTab === 'buildings' ? 'active' : ''}`}>
+                            <div className="container">
+                                <div className="sidebar-header">
+                                    <h2>건물 목록</h2>
+                                    <input
+                                        type="text"
+                                        className="search-box"
+                                        placeholder="건물명 검색..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                    <div style={{
+                                        marginTop: '10px',
+                                        display: 'flex',
+                                        gap: '6px'
+                                    }}>
+                                        <button
+                                            className="btn btn-primary"
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px 12px',
+                                                fontSize: '13px',
+                                                fontWeight: '600'
+                                            }}
+                                            onClick={() => {
+                                                setSelectedBuilding(null);
+                                                setShowForm(true);
+                                                setActiveTab('units');
+                                            }}
+                                        >
+                                            + 추가
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary"
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px 12px',
+                                                fontSize: '13px',
+                                                fontWeight: '600'
+                                            }}
+                                            onClick={exportToCSV}
+                                        >
+                                            📄 CSV백업
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="building-list">
+                                    {filteredBuildings.map(building => {
+                                        return (
+                                            <div
+                                                key={building.id}
+                                                className={`building-item ${selectedBuilding?.id === building.id ? 'active' : ''}`}
+                                                onClick={() => selectBuilding(building)}
+                                                onContextMenu={(e) => handleBuildingRightClick(e, building)}
+                                                onTouchStart={(e) => handleBuildingLongPressStart(e, building)}
+                                                onTouchEnd={handleBuildingLongPressEnd}
+                                                onMouseDown={(e) => handleBuildingLongPressStart(e, building)}
+                                                onMouseUp={handleBuildingLongPressEnd}
+                                                onMouseLeave={handleBuildingLongPressEnd}
+                                                title="우클릭 또는 길게 눌러서 메뉴 열기"
+                                            >
+                                                <div className="building-name">{building.name}</div>
+                                            </div>
+                                        );
+                                    })}
+                                    {filteredBuildings.length === 0 && (
+                                        <div style={{padding: '20px', textAlign: 'center', color: '#666'}}>
+                                            {searchTerm ? '검색 결과가 없습니다' : '등록된 건물이 없습니다'}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 모바일 탭 컨텐츠 - 호실 정보 */}
+                        <div className={`mobile-tab-content ${activeTab === 'units' ? 'active' : ''}`}>
+                            <div className="container">
+                                <div className="header">
+                                    <h1>매물 관리 시스템</h1>
+                                    <p>부동산 매물의 호실별 점유상태를 효율적으로 관리합니다</p>
+                                </div>
+
+                    {!selectedBuilding && !showForm && (
+                        <div style={{
+                            background: 'white',
+                            padding: '40px',
+                            borderRadius: '8px',
+                            textAlign: 'center',
+                            color: '#666'
+                        }}>
+                            <h3 style={{marginBottom: '10px'}}>건물을 선택하세요</h3>
+                            <p>좌측 사이드바에서 건물을 선택하거나 새 건물을 추가하세요.</p>
+                        </div>
+                    )}
+
+                    {!selectedBuilding && showForm && (
+                        <>
+
+                            <div className={`building-form ${!showForm ? 'hidden' : ''}`}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                    <h2>새 건물 추가</h2>
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={addDong}
+                                            className="btn btn-secondary"
+                                            style={{ marginRight: '10px' }}
+                                        >
+                                            동 추가
+                                        </button>
+                                        <button type="submit" form="building-form-main" className="btn btn-primary">
+                                            건물 추가
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form id="building-form-main" onSubmit={handleSubmit}>
+                                    <div className="form-group">
+                                        <label>건물명</label>
+                                        <input
+                                            type="text"
+                                            value={buildingConfig.name}
+                                            onChange={handleBuildingNameChange}
+                                            placeholder="예: 래미안 아파트"
+                                            required
+                                        />
+                                    </div>
+
+                                    <BuildingSetup
+                                        config={buildingConfig}
+                                        setConfig={setBuildingConfig}
+                                    />
+                                </form>
+                            </div>
+
+                        </>
+                    )}
+
+                    {selectedBuilding && (
+                        <div>
+                            <div style={{
+                                marginBottom: '20px',
+                                background: '#fce4ec',
+                                padding: '12px 16px',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            setSelectedBuilding(null);
+                                            setShowForm(false);
+                                        }}
+                                        style={{
+                                            padding: '6px 12px',
+                                            fontSize: '14px',
+                                            minWidth: 'auto'
+                                        }}
+                                    >
+                                        ← 해제
+                                    </button>
+                                    <h2 style={{
+                                        margin: 0,
+                                        color: '#1a1a1a',
+                                        fontWeight: 'bold',
+                                        fontSize: '18px'
+                                    }}>
+                                        🏢 {selectedBuilding.name}
+                                        {getBuildingInfo(selectedBuilding.id) && (
+                                            <span style={{
+                                                marginLeft: '8px',
+                                                fontSize: '12px',
+                                                color: '#2c5aa0'
+                                            }}>
+                                                ℹ️
+                                            </span>
+                                        )}
+                                    </h2>
+                                </div>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => openBuildingInfoModal(selectedBuilding)}
+                                    style={{
+                                        padding: '6px 10px',
+                                        fontSize: '12px',
+                                        minWidth: 'auto',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    📋 정보
+                                </button>
+                            </div>
+
+                            <div className="units-grid">
+                                <div className="units-grid-header">
+                                    <h3 style={{margin: 0, color: '#555'}}>
+                                        호실 현황 (총 {selectedBuilding.units.length}호실)
+                                    </h3>
+                                    <div className="edit-mode-toggle">
+                                        <span className="edit-mode-label">편집 모드</span>
+                                        <label className="toggle-switch">
+                                            <input
+                                                type="checkbox"
+                                                checked={editMode}
+                                                onChange={(e) => setEditMode(e.target.checked)}
+                                            />
+                                            <span className="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="status-legend">
+                                    <div className="status-legend-title">점유상태</div>
+                                    <div className="status-legend-items">
+                                        {Object.keys(statusLabels).map(status => (
+                                            <span key={status} className={`status-legend-tag ${status}`}>
+                                                {statusLabels[status]}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {renderUnits()}
+                            </div>
+                        </div>
+                    )}
+
+                    {showModal && selectedUnit && (
+                        <div className="modal-overlay" onClick={closeModal}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h4 className="modal-title">
+                                        {selectedUnit.dongName} {selectedUnit.number}
+                                    </h4>
+                                    <button className="modal-close" onClick={closeModal}>×</button>
+                                </div>
+                                <div className="modal-body">
+                                    <DetailForm
+                                        formData={unitFormData}
+                                        onFormChange={setUnitFormData}
+                                        status={tempStatus}
+                                        onStatusChange={setTempStatus}
+                                        statusLabels={statusLabels}
+                                        convertToPyeong={convertToPyeong}
+                                    />
+                                </div>
+                                <div className="modal-actions" style={{ padding: '0 24px 24px' }}>
+                                    <button className="btn btn-cancel" onClick={closeModal}>
+                                        취소
+                                    </button>
+                                    <button className="btn btn-primary" onClick={handleSaveAllAndClose}>
+                                        저장
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showDeleteModal && buildingToDelete && (
+                        <div className="modal-overlay delete-confirm-modal" onClick={closeDeleteModal}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">건물 삭제 확인</h3>
+                                    <button className="modal-close" onClick={closeDeleteModal}>
+                                        ×
+                                    </button>
+                                </div>
+
+                                <div className="modal-body">
+                                    <div className="delete-confirm-content">
+                                        <div className="delete-confirm-icon">⚠️</div>
+                                        <div className="delete-confirm-text">
+                                            정말로 <span className="delete-building-name">"{buildingToDelete.name}"</span> 건물을 삭제하시겠습니까?
+                                        </div>
+                                        <div className="delete-confirm-subtext">
+                                            이 작업은 되돌릴 수 없으며, 모든 호실 데이터가 영구적으로 삭제됩니다.
+                                        </div>
+                                        <div className="modal-actions">
+                                            <button className="btn btn-cancel" onClick={closeDeleteModal}>
+                                                취소
+                                            </button>
+                                            <button className="btn btn-danger" onClick={deleteBuilding}>
+                                                삭제
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showUnitEditModal && editingUnit && (
+                        <div className="modal-overlay unit-edit-modal" onClick={closeUnitEditModal}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">호실 번호 수정</h3>
+                                    <button className="modal-close" onClick={closeUnitEditModal}>
+                                        ×
+                                    </button>
+                                </div>
+
+                                <div className="modal-body">
+                                    <div style={{ marginBottom: '20px', color: '#666' }}>
+                                        현재: {editingUnit.number}
+                                    </div>
+
+                                    <input
+                                        type="text"
+                                        className="unit-number-input"
+                                        value={newUnitNumber}
+                                        onChange={(e) => setNewUnitNumber(e.target.value)}
+                                        placeholder="새 호실 번호 (예: 601-1, 601-2)"
+                                        autoFocus
+                                    />
+
+                                    <div className="modal-actions">
+                                        <button className="btn btn-cancel" onClick={closeUnitEditModal}>
+                                            취소
+                                        </button>
+                                        <button className="btn btn-primary" onClick={updateUnitNumber}>
+                                            저장
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 호실 삭제 확인 모달 */}
+                    {showUnitDeleteModal && unitToDelete && (
+                        <div className="modal-overlay unit-delete-modal" onClick={closeUnitDeleteModal}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">호실 삭제 확인</h3>
+                                    <button className="modal-close" onClick={closeUnitDeleteModal}>
+                                        ×
+                                    </button>
+                                </div>
+
+                                <div className="modal-body">
+                                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                        <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>
+                                            {unitToDelete.number}
+                                        </div>
+                                        <div style={{ color: '#666' }}>
+                                            정말로 이 호실을 삭제하시겠습니까?<br/>
+                                            삭제된 호실의 모든 정보가 사라집니다.
+                                        </div>
+                                    </div>
+
+                                    <div className="modal-actions">
+                                        <button className="btn btn-cancel" onClick={closeUnitDeleteModal}>
+                                            취소
+                                        </button>
+                                        <button className="btn btn-danger" onClick={confirmDeleteUnit}>
+                                            삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 호실 컨텍스트 메뉴 */}
+                    {showUnitContextMenu && (
+                        <div
+                            className="context-menu"
+                            style={{
+                                left: unitContextMenuPosition.x,
+                                top: unitContextMenuPosition.y
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button className="context-menu-item" onClick={startEditUnitFromContext}>
+                                번호 수정
+                            </button>
+                            <div className="context-menu-separator"></div>
+                            <button className="context-menu-item danger" onClick={deleteUnitFromContext}>
+                                삭제
+                            </button>
+                            <div className="context-menu-separator"></div>
+                            <button className="context-menu-item" onClick={closeUnitContextMenu}>
+                                취소
+                            </button>
+                        </div>
+                    )}
+
+                    {/* 건물 컨텍스트 메뉴 */}
+                    {showBuildingContextMenu && (
+                        <div
+                            className="context-menu"
+                            style={{
+                                left: contextMenuPosition.x,
+                                top: contextMenuPosition.y
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button className="context-menu-item" onClick={() => {
+                                openBuildingInfoModal(contextMenuBuilding);
+                                closeBuildingContextMenu();
+                            }}>
+                                📋 건물 정보
+                            </button>
+                            <div className="context-menu-separator"></div>
+                            <button className="context-menu-item" onClick={startEditBuildingName}>
+                                ✏️ 이름 수정
+                            </button>
+                            <div className="context-menu-separator"></div>
+                            <button className="context-menu-item danger" onClick={deleteBuildingFromContext}>
+                                🗑️ 삭제
+                            </button>
+                            <div className="context-menu-separator"></div>
+                            <button className="context-menu-item" onClick={closeBuildingContextMenu}>
+                                ❌ 취소
+                            </button>
+                        </div>
+                    )}
+
+                    {/* 건물 이름 수정 모달 */}
+                    {showBuildingEditModal && (
+                        <div className="modal-overlay building-edit-modal" onClick={cancelEditBuildingName}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">건물 이름 수정</h3>
+                                    <button className="modal-close" onClick={cancelEditBuildingName}>
+                                        ×
+                                    </button>
+                                </div>
+
+                                <div className="modal-body">
+                                    <div style={{ marginBottom: '20px', color: '#666' }}>
+                                        현재: {contextMenuBuilding?.name}
+                                    </div>
+
+                                    <input
+                                        type="text"
+                                        className="unit-number-input"
+                                        value={editingBuildingName}
+                                        onChange={(e) => setEditingBuildingName(e.target.value)}
+                                        placeholder="새 건물 이름을 입력하세요"
+                                        autoFocus
+                                    />
+
+                                    <div className="modal-actions">
+                                        <button className="btn btn-cancel" onClick={cancelEditBuildingName}>
+                                            취소
+                                        </button>
+                                        <button className="btn btn-primary" onClick={saveBuildingName}>
+                                            저장
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 건물 정보 모달 */}
+                    {showBuildingInfoModal && currentBuildingForInfo && (
+                        <div className="modal-overlay building-info-modal" onClick={closeBuildingInfoModal}>
+                            <div className="modal" style={{maxWidth: '600px'}} onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">🏢 {currentBuildingForInfo.name} - 건물 정보</h3>
+                                    <button className="modal-close" onClick={closeBuildingInfoModal}>×</button>
+                                </div>
+
+                                <div className="modal-body">
+                                    {buildingInfoViewMode ? (
+                                        <BuildingInfoView
+                                            formData={buildingInfoForm}
+                                        />
+                                    ) : (
+                                        <BuildingInfoForm
+                                            formData={buildingInfoForm}
+                                            onFormChange={handleBuildingInfoChange}
+                                        />
+                                    )}
+                                </div>
+
+                                <div className="modal-actions" style={{ padding: '0 24px 24px' }}>
+                                    {buildingInfoViewMode ? (
+                                        <>
+                                            <button className="btn btn-cancel" onClick={closeBuildingInfoModal}>
+                                                닫기
+                                            </button>
+                                            <button
+                                                className="btn btn-primary"
+                                                onClick={() => setBuildingInfoViewMode(false)}
+                                            >
+                                                ✏️ 편집
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                className="btn btn-cancel"
+                                                onClick={() => setBuildingInfoViewMode(true)}
+                                            >
+                                                취소
+                                            </button>
+                                            <button className="btn btn-primary" onClick={saveBuildingInfo}>
+                                                💾 저장
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 건물 설정 컴포넌트
+        function BuildingSetup({ config, setConfig }) {
+            const removeDong = (dongId) => {
+                setConfig(prev => ({
+                    ...prev,
+                    dongs: prev.dongs.filter(d => d.id !== dongId)
+                }));
+            };
+
+            const updateDongName = (dongId, newName) => {
+                setConfig(prev => ({
+                    ...prev,
+                    dongs: prev.dongs.map(dong =>
+                        dong.id === dongId ? { ...dong, name: newName } : dong
+                    )
+                }));
+            };
+
+            const addFloor = (dongId) => {
+                setConfig(prev => ({
+                    ...prev,
+                    dongs: prev.dongs.map(dong => {
+                        if (dong.id === dongId) {
+                            const newFloor = dong.floors.length > 0 ? Math.max(...dong.floors.map(f => f.floor)) + 1 : 1;
+                            return {
+                                ...dong,
+                                floors: [...dong.floors, {
+                                    floor: newFloor,
+                                    unitCount: 4
+                                }]
+                            };
+                        }
+                        return dong;
+                    })
+                }));
+            };
+
+            const updateFloorUnitCount = (dongId, floor, newCount) => {
+                setConfig(prev => ({
+                    ...prev,
+                    dongs: prev.dongs.map(dong => {
+                        if (dong.id === dongId) {
+                            return {
+                                ...dong,
+                                floors: dong.floors.map(floorConfig => {
+                                    if (floorConfig.floor === floor) {
+                                        return {
+                                            ...floorConfig,
+                                            unitCount: parseInt(newCount)
+                                        };
+                                    }
+                                    return floorConfig;
+                                })
+                            };
+                        }
+                        return dong;
+                    })
+                }));
+            };
+
+            const removeFloor = (dongId, floor) => {
+                setConfig(prev => ({
+                    ...prev,
+                    dongs: prev.dongs.map(dong => {
+                        if (dong.id === dongId) {
+                            return {
+                                ...dong,
+                                floors: dong.floors.filter(f => f.floor !== floor)
+                            };
+                        }
+                        return dong;
+                    })
+                }));
+            };
+
+            return (
+                <div>
+                    {config.dongs.map(dong => (
+                        <div key={dong.id} className="dong-config">
+                            <div className="dong-header">
+                                <input
+                                    type="text"
+                                    className="dong-name-input"
+                                    value={dong.name}
+                                    onChange={(e) => updateDongName(dong.id, e.target.value)}
+                                    placeholder="동명 입력 (예: A동, 101동, 상가동)"
+                                />
+                                <div>
+                                    <button
+                                        type="button"
+                                        className="add-floor-btn"
+                                        onClick={() => addFloor(dong.id)}
+                                    >
+                                        + 층 추가
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="remove-btn"
+                                        style={{marginLeft: '10px'}}
+                                        onClick={() => removeDong(dong.id)}
+                                    >
+                                        동 삭제
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="floors-grid">
+                                {dong.floors.map(floorConfig => (
+                                    <div key={floorConfig.floor} className="floor-config">
+                                        <button
+                                            type="button"
+                                            className="floor-remove-btn"
+                                            onClick={() => removeFloor(dong.id, floorConfig.floor)}
+                                            title="층 삭제"
+                                        >
+                                            ×
+                                        </button>
+
+                                        <div className="floor-config-header">
+                                            {floorConfig.floor}층
+                                        </div>
+
+                                        <div className="floor-inputs">
+                                            <div className="floor-input-group">
+                                                <span className="floor-input-label">층수</span>
+                                                <input
+                                                    type="number"
+                                                    className="floor-input"
+                                                    value={floorConfig.floor}
+                                                    onChange={(e) => {
+                                                        const newFloor = parseInt(e.target.value);
+                                                        setConfig(prev => ({
+                                                            ...prev,
+                                                            dongs: prev.dongs.map(d => {
+                                                                if (d.id === dong.id) {
+                                                                    return {
+                                                                        ...d,
+                                                                        floors: d.floors.map(f =>
+                                                                            f.floor === floorConfig.floor
+                                                                                ? { ...f, floor: newFloor }
+                                                                                : f
+                                                                        )
+                                                                    };
+                                                                }
+                                                                return d;
+                                                            })
+                                                        }));
+                                                    }}
+                                                    min="1"
+                                                    max="100"
+                                                />
+                                            </div>
+
+                                            <div className="floor-input-group">
+                                                <span className="floor-input-label">호실수</span>
+                                                <input
+                                                    type="number"
+                                                    className="unit-count-input"
+                                                    value={floorConfig.unitCount}
+                                                    onChange={(e) => updateFloorUnitCount(dong.id, floorConfig.floor, e.target.value)}
+                                                    min="1"
+                                                    max="50"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // 상세 정보 입력 폼 컴포넌트
+        function DetailForm({ formData, onFormChange, status, onStatusChange, statusLabels, convertToPyeong }) {
+
+            const handleInputChange = (field, value) => {
+                onFormChange(prev => ({
+                    ...prev,
+                    [field]: value
+                }));
+            };
+
+            // 전화번호 포맷팅 함수
+            const formatPhoneNumber = (value) => {
+                // 숫자만 추출
+                const numbers = value.replace(/[^\d]/g, '');
+
+                // 길이에 따라 포맷팅
+                if (numbers.length <= 3) {
+                    return numbers;
+                } else if (numbers.length <= 7) {
+                    return numbers.length === 4 && numbers.startsWith('02')
+                        ? `${numbers.slice(0, 2)}-${numbers.slice(2)}`
+                        : `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+                } else if (numbers.length <= 11) {
+                    if (numbers.startsWith('02')) {
+                        // 서울 지역번호 (02)
+                        return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+                    } else if (numbers.length === 8) {
+                        // 8자리 유선전화
+                        return `${numbers.slice(0, 4)}-${numbers.slice(4)}`;
+                    } else {
+                        // 휴대폰 또는 기타 지역번호
+                        return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+                    }
+                } else {
+                    // 11자리 초과시 11자리까지만
+                    const truncated = numbers.slice(0, 11);
+                    if (truncated.startsWith('02')) {
+                        return `${truncated.slice(0, 2)}-${truncated.slice(2, 6)}-${truncated.slice(6)}`;
+                    } else {
+                        return `${truncated.slice(0, 3)}-${truncated.slice(3, 7)}-${truncated.slice(7)}`;
+                    }
+                }
+            };
+
+            // 전화번호 입력 처리
+            const handlePhoneChange = (field, value) => {
+                const formatted = formatPhoneNumber(value);
+                handleInputChange(field, formatted);
+            };
+
+            return (
+                <div className="detail-form">
+                    <div className="modal-section">
+                        <div className="modal-section-title">점유상태 변경</div>
+                        <div className="status-selector">
+                            {Object.keys(statusLabels).map(s => (
+                                <div
+                                    key={s}
+                                    className={`status-option ${s} ${status === s ? 'selected' : ''}`}
+                                    onClick={() => onStatusChange(s)}
+                                >
+                                    {statusLabels[s]}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="modal-section">
+                        <div className="modal-section-title">상세 정보</div>
+                        <div className="form-row">
+                            <div className="form-field">
+                                <label>상호</label>
+                                <input
+                                    type="text"
+                                    value={formData.storeName}
+                                    onChange={(e) => handleInputChange('storeName', e.target.value)}
+                                    placeholder="상호명 입력"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>매장번호</label>
+                                <input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    value={formData.storeNumber}
+                                    onChange={(e) => handleInputChange('storeNumber', e.target.value)}
+                                    placeholder="매장번호 입력"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-row">
+                            <div className="form-field">
+                                <label>소유자명</label>
+                                <input
+                                    type="text"
+                                    value={formData.ownerName}
+                                    onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                                    placeholder="소유자명 입력"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>소유자 번호</label>
+                                <input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    value={formData.ownerPhone}
+                                    onChange={(e) => handlePhoneChange('ownerPhone', e.target.value)}
+                                    placeholder="연락처 입력 (예: 010-1234-5678)"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-row-3">
+                            <div className="form-field">
+                                <label>희망임대료</label>
+                                <input
+                                    type="text"
+                                    value={formData.desiredRent}
+                                    onChange={(e) => handleInputChange('desiredRent', e.target.value)}
+                                    placeholder="예: 100만원"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>현재임대료</label>
+                                <input
+                                    type="text"
+                                    value={formData.currentRent}
+                                    onChange={(e) => handleInputChange('currentRent', e.target.value)}
+                                    placeholder="예: 80만원"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>권리금</label>
+                                <input
+                                    type="text"
+                                    value={formData.premium}
+                                    onChange={(e) => handleInputChange('premium', e.target.value)}
+                                    placeholder="예: 500만원"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-row">
+                            <div className="form-field">
+                                <label>전용면적 (㎡)</label>
+                                <div className="area-input-group">
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={formData.exclusiveArea}
+                                        onChange={(e) => handleInputChange('exclusiveArea', e.target.value)}
+                                        placeholder="제곱미터 입력"
+                                    />
+                                    <span className="area-display">
+                                        {convertToPyeong(formData.exclusiveArea)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="form-field">
+                                <label>공급면적 (㎡)</label>
+                                <div className="area-input-group">
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={formData.supplyArea}
+                                        onChange={(e) => handleInputChange('supplyArea', e.target.value)}
+                                        placeholder="제곱미터 입력"
+                                    />
+                                    <span className="area-display">
+                                        {convertToPyeong(formData.supplyArea)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="form-row">
+                            <div className="form-field">
+                                <label>출입문 방향</label>
+                                <select
+                                    value={formData.doorDirection}
+                                    onChange={(e) => handleInputChange('doorDirection', e.target.value)}
+                                >
+                                    <option value="">선택하세요</option>
+                                    <option value="동향">동향</option>
+                                    <option value="서향">서향</option>
+                                    <option value="남향">남향</option>
+                                    <option value="북향">북향</option>
+                                    <option value="남동향">남동향</option>
+                                    <option value="남서향">남서향</option>
+                                    <option value="북동향">북동향</option>
+                                    <option value="북서향">북서향</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>대로 기준 위치</label>
+                                <select
+                                    value={formData.roadPosition}
+                                    onChange={(e) => handleInputChange('roadPosition', e.target.value)}
+                                >
+                                    <option value="">선택하세요</option>
+                                    <option value="전면">전면</option>
+                                    <option value="후면">후면</option>
+                                    <option value="측면">측면</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-field">
+                            <label>메모</label>
+                            <textarea
+                                value={formData.memo}
+                                onChange={(e) => handleInputChange('memo', e.target.value)}
+                                placeholder="특이사항이나 추가 정보를 입력하세요"
+                                rows="3"
+                            />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 건물 정보 조회 컴포넌트 (노션 스타일)
+        function BuildingInfoView({ formData }) {
+            const getDisplayValue = (value, suffix = '') => {
+                if (value && value !== '') {
+                    return {
+                        value: suffix ? `${value}${suffix}` : value,
+                        isEmpty: false
+                    };
+                }
+                return {
+                    value: "비어있음",
+                    isEmpty: true
+                };
+            };
+
+            const PropertyItem = ({ icon, label, value, suffix = '', isFullWidth = false }) => {
+                const displayData = getDisplayValue(value, suffix);
+
+                return (
+                    <div className={`notion-property ${isFullWidth ? 'full-width' : ''}`}>
+                        <div className="notion-property-label">
+                            <span className="notion-property-icon">{icon}</span>
+                            <span className="notion-property-name">{label}</span>
+                        </div>
+                        <div className={`notion-property-value ${displayData.isEmpty ? 'empty' : 'filled'}`}>
+                            {displayData.isEmpty ? (
+                                <span className="empty-state">비어있음</span>
+                            ) : (
+                                <span className="value-text">{displayData.value}</span>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="notion-building-info">
+                    <div className="notion-section">
+                        <h3 className="notion-section-title">
+                            <span className="notion-section-icon">🏠</span>
+                            기본 정보
+                        </h3>
+                        <div className="notion-properties">
+                            <PropertyItem icon="•" label="소재지" value={formData.address} />
+                            <PropertyItem icon="•" label="지번" value={formData.lotNumber} />
+                            <PropertyItem icon="•" label="사용승인일자" value={formData.approvalDate} />
+                        </div>
+                    </div>
+
+                    <div className="notion-section">
+                        <h3 className="notion-section-title">
+                            <span className="notion-section-icon">🏢</span>
+                            건물 현황
+                        </h3>
+                        <div className="notion-properties">
+                            <PropertyItem icon="•" label="총 층수" value={formData.totalFloors} suffix="층" />
+                            <PropertyItem icon="•" label="주차대수" value={formData.parkingSpaces} suffix="대" />
+                            <PropertyItem icon="•" label="엘리베이터" value={formData.elevators} suffix="대" />
+                        </div>
+                    </div>
+
+                    <div className="notion-section">
+                        <h3 className="notion-section-title">
+                            <span className="notion-section-icon">💰</span>
+                            관리 정보
+                        </h3>
+                        <div className="notion-properties">
+                            <PropertyItem icon="•" label="관리비" value={formData.managementFee} />
+                            <PropertyItem icon="•" label="주차비" value={formData.parkingFee} />
+                            <PropertyItem icon="•" label="관리사무소" value={formData.managementOffice} />
+                        </div>
+                    </div>
+
+                    <div className="notion-section">
+                        <h3 className="notion-section-title">
+                            <span className="notion-section-icon">📝</span>
+                            기타
+                        </h3>
+                        <div className="notion-properties">
+                            <PropertyItem icon="•" label="특이사항" value={formData.specialNotes} isFullWidth={true} />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 건물 정보 입력 폼 컴포넌트
+        function BuildingInfoForm({ formData, onFormChange }) {
+            const handleInputChange = (field, value) => {
+                onFormChange(field, value);
+            };
+
+            return (
+                <div className="building-info-form">
+                    {/* 기본 정보 */}
+                    <div className="modal-section">
+                        <div className="modal-section-title">📍 기본 정보</div>
+                        <div className="form-row">
+                            <div className="form-field">
+                                <label>소재지</label>
+                                <input
+                                    type="text"
+                                    value={formData.address || ''}
+                                    onChange={(e) => handleInputChange('address', e.target.value)}
+                                    placeholder="예: 서울시 강남구 역삼동"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>지번</label>
+                                <input
+                                    type="text"
+                                    value={formData.lotNumber || ''}
+                                    onChange={(e) => handleInputChange('lotNumber', e.target.value)}
+                                    placeholder="예: 123-45"
+                                />
+                            </div>
+                        </div>
+                        <div className="form-field">
+                            <label>사용승인일자</label>
+                            <input
+                                type="date"
+                                value={formData.approvalDate || ''}
+                                onChange={(e) => handleInputChange('approvalDate', e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {/* 건물 현황 */}
+                    <div className="modal-section">
+                        <div className="modal-section-title">🏢 건물 현황</div>
+                        <div className="form-row-3">
+                            <div className="form-field">
+                                <label>총 층수</label>
+                                <input
+                                    type="number"
+                                    value={formData.totalFloors || ''}
+                                    onChange={(e) => handleInputChange('totalFloors', e.target.value)}
+                                    placeholder="층"
+                                    min="1"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>주차대수</label>
+                                <input
+                                    type="number"
+                                    value={formData.parkingSpaces || ''}
+                                    onChange={(e) => handleInputChange('parkingSpaces', e.target.value)}
+                                    placeholder="대"
+                                    min="0"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>엘리베이터</label>
+                                <input
+                                    type="number"
+                                    value={formData.elevators || ''}
+                                    onChange={(e) => handleInputChange('elevators', e.target.value)}
+                                    placeholder="대"
+                                    min="0"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 관리 정보 */}
+                    <div className="modal-section">
+                        <div className="modal-section-title">💰 관리 정보</div>
+                        <div className="form-row-3">
+                            <div className="form-field">
+                                <label>관리비</label>
+                                <input
+                                    type="text"
+                                    value={formData.managementFee || ''}
+                                    onChange={(e) => handleInputChange('managementFee', e.target.value)}
+                                    placeholder="예: 5만원/월"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>주차비</label>
+                                <input
+                                    type="text"
+                                    value={formData.parkingFee || ''}
+                                    onChange={(e) => handleInputChange('parkingFee', e.target.value)}
+                                    placeholder="예: 3만원/월"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>관리사무소</label>
+                                <input
+                                    type="tel"
+                                    value={formData.managementOffice || ''}
+                                    onChange={(e) => handleInputChange('managementOffice', e.target.value)}
+                                    placeholder="연락처"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 기타 */}
+                    <div className="modal-section">
+                        <div className="modal-section-title">📝 기타</div>
+                        <div className="form-field">
+                            <label>특이사항</label>
+                            <textarea
+                                value={formData.specialNotes || ''}
+                                onChange={(e) => handleInputChange('specialNotes', e.target.value)}
+                                placeholder="건물의 특이사항을 입력하세요"
+                                rows="3"
+                            />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PropertyManagement />);
+    </script>
+</body>
+</html>
