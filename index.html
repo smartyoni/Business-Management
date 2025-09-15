@@ -7,6 +7,47 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJZtFcoRqfC4R376w9e60dwitqLUL_NBs",
+            authDomain: "business-management-e6ce9.firebaseapp.com",
+            projectId: "business-management-e6ce9",
+            storageBucket: "business-management-e6ce9.firebasestorage.app",
+            messagingSenderId: "483418455510",
+            appId: "1:483418455510:web:dd909329ae5c2589fc7877"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Firebase 인스턴스를 전역으로 사용 가능하게 설정
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.firebaseAuthMethods = {
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged
+        };
+        window.firebaseDbMethods = {
+            collection,
+            addDoc,
+            getDocs,
+            updateDoc,
+            deleteDoc,
+            doc,
+            query,
+            where
+        };
+    </script>
+
     <style>
         * {
             margin: 0;
