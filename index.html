@@ -1469,15 +1469,34 @@
             // Firebase에서 데이터 불러오기
             useEffect(() => {
                 const loadData = async () => {
+                    // 먼저 localStorage에서 데이터 로드 (즉시 표시용)
+                    console.log('localStorage에서 캐시된 데이터 로드 중...');
+                    const savedBuildings = localStorage.getItem('propertyBuildings');
+                    const savedUnitDetails = localStorage.getItem('unitDetails');
+                    const savedBuildingInfo = localStorage.getItem('buildingInfoData');
+
+                    if (savedBuildings) {
+                        console.log('localStorage에서 건물 데이터 복원');
+                        setBuildings(JSON.parse(savedBuildings));
+                    }
+                    if (savedUnitDetails) {
+                        console.log('localStorage에서 유닛 상세정보 복원');
+                        setUnitDetails(JSON.parse(savedUnitDetails));
+                    }
+                    if (savedBuildingInfo) {
+                        console.log('localStorage에서 건물 정보 복원');
+                        setBuildingInfoData(JSON.parse(savedBuildingInfo));
+                    }
+
                     // Firebase 연결 확인
                     if (!window.firebaseDb || !window.firebaseDbMethods) {
-                        console.warn('Firebase가 아직 로드되지 않음, 1초 후 재시도...');
+                        console.warn('Firebase가 아직 로드되지 않음, localStorage 데이터 사용. 1초 후 Firebase 재시도...');
                         setTimeout(loadData, 1000);
                         return;
                     }
 
                     try {
-                        console.log('Firebase 연결 확인됨, 데이터 로드 시작');
+                        console.log('Firebase 연결 확인됨, 최신 데이터 동기화 시작');
                         const { collection, getDocs } = window.firebaseDbMethods;
 
                         // 건물 데이터 로드
@@ -1539,22 +1558,8 @@
                         }
 
                     } catch (error) {
-                        console.error('Firebase 데이터 로딩 오류:', error);
-                        // Firebase 로딩 실패시 localStorage 백업 사용
-                        const savedBuildings = localStorage.getItem('propertyBuildings');
-                        if (savedBuildings) {
-                            setBuildings(JSON.parse(savedBuildings));
-                        }
-
-                        const savedUnitDetails = localStorage.getItem('unitDetails');
-                        if (savedUnitDetails) {
-                            setUnitDetails(JSON.parse(savedUnitDetails));
-                        }
-
-                        const savedBuildingInfo = localStorage.getItem('buildingInfoData');
-                        if (savedBuildingInfo) {
-                            setBuildingInfoData(JSON.parse(savedBuildingInfo));
-                        }
+                        console.error('Firebase 데이터 동기화 오류 (localStorage 데이터는 이미 로드됨):', error);
+                        // localStorage에서 이미 데이터를 로드했으므로 추가 작업 불필요
                     }
                 };
 
