@@ -1453,28 +1453,122 @@
                 ]
             });
 
-            // localStorage에서 데이터 불러오기
+            // Firebase에서 데이터 불러오기
             useEffect(() => {
-                const savedBuildings = localStorage.getItem('propertyBuildings');
-                if (savedBuildings) {
-                    setBuildings(JSON.parse(savedBuildings));
-                }
+                const loadData = async () => {
+                    try {
+                        const { collection, getDocs } = window.firebaseDbMethods;
 
-                const savedUnitDetails = localStorage.getItem('unitDetails');
-                if (savedUnitDetails) {
-                    setUnitDetails(JSON.parse(savedUnitDetails));
-                }
+                        // 건물 데이터 로드
+                        const buildingsSnapshot = await getDocs(collection(window.firebaseDb, 'buildings'));
+                        const buildingsData = [];
 
-                const savedBuildingInfo = localStorage.getItem('buildingInfoData');
-                if (savedBuildingInfo) {
-                    setBuildingInfoData(JSON.parse(savedBuildingInfo));
-                }
+                        for (const doc of buildingsSnapshot.docs) {
+                            const building = { id: doc.id, ...doc.data() };
+
+                            // 각 빌딩의 유닛 데이터도 함께 로드
+                            try {
+                                const unitsSnapshot = await getDocs(collection(window.firebaseDb, `buildings/${doc.id}/units`));
+                                building.units = unitsSnapshot.docs.map(unitDoc => ({
+                                    id: unitDoc.id,
+                                    ...unitDoc.data()
+                                }));
+                            } catch (unitError) {
+                                building.units = [];
+                            }
+
+                            buildingsData.push(building);
+                        }
+
+                        setBuildings(buildingsData);
+
+                        // 유닛 상세 정보 로드
+                        try {
+                            const unitDetailsSnapshot = await getDocs(collection(window.firebaseDb, 'unitDetails'));
+                            const unitDetailsData = {};
+                            unitDetailsSnapshot.docs.forEach(doc => {
+                                unitDetailsData[doc.id] = doc.data();
+                            });
+                            setUnitDetails(unitDetailsData);
+                        } catch (error) {
+                            console.log('유닛 상세 정보 로드 실패:', error);
+                        }
+
+                        // 건물 정보 로드
+                        try {
+                            const buildingInfoSnapshot = await getDocs(collection(window.firebaseDb, 'buildingInfo'));
+                            const buildingInfoObj = {};
+                            buildingInfoSnapshot.docs.forEach(doc => {
+                                buildingInfoObj[doc.id] = doc.data();
+                            });
+                            setBuildingInfoData(buildingInfoObj);
+                        } catch (error) {
+                            console.log('건물 정보 로드 실패:', error);
+                        }
+
+                    } catch (error) {
+                        console.error('Firebase 데이터 로딩 오류:', error);
+                        // Firebase 로딩 실패시 localStorage 백업 사용
+                        const savedBuildings = localStorage.getItem('propertyBuildings');
+                        if (savedBuildings) {
+                            setBuildings(JSON.parse(savedBuildings));
+                        }
+
+                        const savedUnitDetails = localStorage.getItem('unitDetails');
+                        if (savedUnitDetails) {
+                            setUnitDetails(JSON.parse(savedUnitDetails));
+                        }
+
+                        const savedBuildingInfo = localStorage.getItem('buildingInfoData');
+                        if (savedBuildingInfo) {
+                            setBuildingInfoData(JSON.parse(savedBuildingInfo));
+                        }
+                    }
+                };
+
+                loadData();
             }, []);
 
-            // 건물 데이터 저장
-            const saveBuildings = (buildingsData) => {
-                localStorage.setItem('propertyBuildings', JSON.stringify(buildingsData));
-                setBuildings(buildingsData);
+            // Firebase에 건물 데이터 저장
+            const saveBuildings = async (buildingsData) => {
+                try {
+                    const { collection, addDoc, updateDoc, doc } = window.firebaseDbMethods;
+
+                    for (const building of buildingsData) {
+                        const buildingData = { ...building };
+                        delete buildingData.units; // units는 별도 컬렉션에 저장
+                        delete buildingData.id; // id는 자동생성되므로 제거
+
+                        if (building.id && building.id.startsWith('firebase_')) {
+                            // 기존 Firebase 문서 업데이트
+                            const docId = building.id.replace('firebase_', '');
+                            await updateDoc(doc(window.firebaseDb, 'buildings', docId), buildingData);
+                        } else {
+                            // 새 문서 추가
+                            const docRef = await addDoc(collection(window.firebaseDb, 'buildings'), buildingData);
+                            building.id = `firebase_${docRef.id}`;
+                        }
+
+                        // 유닛 데이터 저장
+                        if (building.units && building.units.length > 0) {
+                            const docId = building.id.replace('firebase_', '');
+                            for (const unit of building.units) {
+                                const unitData = { ...unit };
+                                delete unitData.id;
+                                await addDoc(collection(window.firebaseDb, `buildings/${docId}/units`), unitData);
+                            }
+                        }
+                    }
+
+                    setBuildings(buildingsData);
+                    // 로컬 백업도 유지
+                    localStorage.setItem('propertyBuildings', JSON.stringify(buildingsData));
+                } catch (error) {
+                    console.error('Firebase 저장 오류:', error);
+                    // Firebase 실패시 localStorage만 사용
+                    localStorage.setItem('propertyBuildings', JSON.stringify(buildingsData));
+                    setBuildings(buildingsData);
+                }
             };
 
             // 건물명 변경 처리
@@ -1886,17 +1980,43 @@
             };
 
             // 건물 삭제 실행
-            const deleteBuilding = () => {
+            const deleteBuilding = async () => {
                 if (!buildingToDelete) return;
 
-                const updatedBuildings = buildings.filter(
-                    building => building.id !== buildingToDelete.id
-                );
+                try {
+                    // Firebase에서 삭제
+                    if (buildingToDelete.id && buildingToDelete.id.toString().startsWith('firebase_')) {
+                        const { deleteDoc, doc, collection, getDocs } = window.firebaseDbMethods;
+                        const docId = buildingToDelete.id.toString().replace('firebase_', '');
 
-                saveBuildings(updatedBuildings);
+                        // 먼저 해당 건물의 유닛들 삭제
+                        const unitsSnapshot = await getDocs(collection(window.firebaseDb, `buildings/${docId}/units`));
+                        for (const unitDoc of unitsSnapshot.docs) {
+                            await deleteDoc(unitDoc.ref);
+                        }
 
-                if (selectedBuilding && selectedBuilding.id === buildingToDelete.id) {
-                    setSelectedBuilding(null);
+                        // 건물 문서 삭제
+                        await deleteDoc(doc(window.firebaseDb, 'buildings', docId));
+                    }
+
+                    const updatedBuildings = buildings.filter(
+                        building => building.id !== buildingToDelete.id
+                    );
+
+                    setBuildings(updatedBuildings);
+                    localStorage.setItem('propertyBuildings', JSON.stringify(updatedBuildings));
+
+                    if (selectedBuilding && selectedBuilding.id === buildingToDelete.id) {
+                        setSelectedBuilding(null);
+                    }
+                } catch (error) {
+                    console.error('건물 삭제 오류:', error);
+                    // 실패해도 로컬 상태는 업데이트
+                    const updatedBuildings = buildings.filter(
+                        building => building.id !== buildingToDelete.id
+                    );
+                    setBuildings(updatedBuildings);
+                    localStorage.setItem('propertyBuildings', JSON.stringify(updatedBuildings));
                 }
 
                 closeDeleteModal();
@@ -1982,13 +2102,49 @@
             };
 
             // 호실 상세 정보 저장
-            const saveUnitDetails = (unitId, details) => {
-                const updatedDetails = {
-                    ...unitDetails,
-                    [unitId]: details
-                };
-                setUnitDetails(updatedDetails);
-                localStorage.setItem('unitDetails', JSON.stringify(updatedDetails));
+            const saveUnitDetails = async (unitId, details) => {
+                try {
+                    const { collection, addDoc, updateDoc, doc, query, where, getDocs } = window.firebaseDbMethods;
+
+                    // Firebase에 유닛 상세 정보 저장
+                    const unitDetailsCollection = collection(window.firebaseDb, 'unitDetails');
+
+                    // 기존 문서 확인
+                    const q = query(unitDetailsCollection, where('unitId', '==', unitId));
+                    const querySnapshot = await getDocs(q);
+
+                    if (querySnapshot.empty) {
+                        // 새 문서 추가
+                        await addDoc(unitDetailsCollection, {
+                            unitId: unitId,
+                            ...details,
+                            updatedAt: new Date().toISOString()
+                        });
+                    } else {
+                        // 기존 문서 업데이트
+                        const docRef = querySnapshot.docs[0].ref;
+                        await updateDoc(docRef, {
+                            ...details,
+                            updatedAt: new Date().toISOString()
+                        });
+                    }
+
+                    const updatedDetails = {
+                        ...unitDetails,
+                        [unitId]: details
+                    };
+                    setUnitDetails(updatedDetails);
+                    localStorage.setItem('unitDetails', JSON.stringify(updatedDetails));
+                } catch (error) {
+                    console.error('유닛 상세 정보 저장 오류:', error);
+                    // Firebase 실패시 localStorage만 사용
+                    const updatedDetails = {
+                        ...unitDetails,
+                        [unitId]: details
+                    };
+                    setUnitDetails(updatedDetails);
+                    localStorage.setItem('unitDetails', JSON.stringify(updatedDetails));
+                }
             };
 
             // 호실 상세 정보 가져오기
@@ -2149,19 +2305,59 @@
                 setBuildingInfoViewMode(true);
             };
 
-            const saveBuildingInfo = () => {
+            const saveBuildingInfo = async () => {
                 if (!currentBuildingForInfo) return;
 
-                const updatedBuildingInfo = {
-                    ...buildingInfoData,
-                    [currentBuildingForInfo.id]: buildingInfoForm
-                };
+                try {
+                    const { collection, addDoc, updateDoc, doc, query, where, getDocs } = window.firebaseDbMethods;
 
-                setBuildingInfoData(updatedBuildingInfo);
-                localStorage.setItem('buildingInfoData', JSON.stringify(updatedBuildingInfo));
+                    // Firebase에 건물 정보 저장
+                    const buildingInfoCollection = collection(window.firebaseDb, 'buildingInfo');
 
-                // 저장 후 조회모드로 전환
-                setBuildingInfoViewMode(true);
+                    // 기존 문서 확인
+                    const q = query(buildingInfoCollection, where('buildingId', '==', currentBuildingForInfo.id));
+                    const querySnapshot = await getDocs(q);
+
+                    if (querySnapshot.empty) {
+                        // 새 문서 추가
+                        await addDoc(buildingInfoCollection, {
+                            buildingId: currentBuildingForInfo.id,
+                            ...buildingInfoForm,
+                            updatedAt: new Date().toISOString()
+                        });
+                    } else {
+                        // 기존 문서 업데이트
+                        const docRef = querySnapshot.docs[0].ref;
+                        await updateDoc(docRef, {
+                            ...buildingInfoForm,
+                            updatedAt: new Date().toISOString()
+                        });
+                    }
+
+                    const updatedBuildingInfo = {
+                        ...buildingInfoData,
+                        [currentBuildingForInfo.id]: buildingInfoForm
+                    };
+
+                    setBuildingInfoData(updatedBuildingInfo);
+                    localStorage.setItem('buildingInfoData', JSON.stringify(updatedBuildingInfo));
+
+                    // 저장 후 조회모드로 전환
+                    setBuildingInfoViewMode(true);
+                } catch (error) {
+                    console.error('건물 정보 저장 오류:', error);
+                    // Firebase 실패시 localStorage만 사용
+                    const updatedBuildingInfo = {
+                        ...buildingInfoData,
+                        [currentBuildingForInfo.id]: buildingInfoForm
+                    };
+
+                    setBuildingInfoData(updatedBuildingInfo);
+                    localStorage.setItem('buildingInfoData', JSON.stringify(updatedBuildingInfo));
+
+                    // 저장 후 조회모드로 전환
+                    setBuildingInfoViewMode(true);
+                }
             };
 
             const handleBuildingInfoChange = (field, value) => {
