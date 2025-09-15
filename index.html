@@ -1469,15 +1469,31 @@
             // Firebase에서 데이터 불러오기
             useEffect(() => {
                 const loadData = async () => {
+                    // Firebase 연결 확인
+                    if (!window.firebaseDb || !window.firebaseDbMethods) {
+                        console.warn('Firebase가 아직 로드되지 않음, 1초 후 재시도...');
+                        setTimeout(loadData, 1000);
+                        return;
+                    }
+
                     try {
+                        console.log('Firebase 연결 확인됨, 데이터 로드 시작');
                         const { collection, getDocs } = window.firebaseDbMethods;
 
                         // 건물 데이터 로드
+                        console.log('Firebase에서 건물 데이터 로드 시작...');
                         const buildingsSnapshot = await getDocs(collection(window.firebaseDb, 'buildings'));
                         const buildingsData = [];
 
+                        console.log(`Firebase에서 ${buildingsSnapshot.docs.length}개 건물 발견`);
+
                         for (const doc of buildingsSnapshot.docs) {
-                            const building = { id: doc.id, ...doc.data() };
+                            const building = {
+                                id: `firebase_${doc.id}`, // Firebase ID에 prefix 추가
+                                ...doc.data()
+                            };
+
+                            console.log(`건물 로드 중: ${building.name} (ID: ${building.id})`);
 
                             // 각 빌딩의 유닛 데이터도 함께 로드
                             try {
@@ -1486,13 +1502,16 @@
                                     id: unitDoc.id,
                                     ...unitDoc.data()
                                 }));
+                                console.log(`  - ${building.units.length}개 유닛 로드됨`);
                             } catch (unitError) {
+                                console.warn(`유닛 로드 실패 (${building.name}):`, unitError);
                                 building.units = [];
                             }
 
                             buildingsData.push(building);
                         }
 
+                        console.log(`총 ${buildingsData.length}개 건물 로드 완료`);
                         setBuildings(buildingsData);
 
                         // 유닛 상세 정보 로드
@@ -1542,40 +1561,65 @@
                 loadData();
             }, []);
 
+            // Firebase에 개별 건물 저장
+            const saveBuildingToFirebase = async (building) => {
+                try {
+                    const { collection, addDoc, updateDoc, doc, getDocs, deleteDoc } = window.firebaseDbMethods;
+
+                    const buildingData = { ...building };
+                    delete buildingData.units; // units는 별도 컬렉션에 저장
+
+                    let docId;
+
+                    if (building.id && building.id.toString().startsWith('firebase_')) {
+                        // 기존 Firebase 문서 업데이트
+                        docId = building.id.toString().replace('firebase_', '');
+                        await updateDoc(doc(window.firebaseDb, 'buildings', docId), buildingData);
+                    } else {
+                        // 새 문서 추가
+                        delete buildingData.id; // 새 문서는 id 제거
+                        const docRef = await addDoc(collection(window.firebaseDb, 'buildings'), buildingData);
+                        docId = docRef.id;
+                        building.id = `firebase_${docRef.id}`;
+                    }
+
+                    // 기존 유닛들 삭제
+                    const unitsCollection = collection(window.firebaseDb, `buildings/${docId}/units`);
+                    const existingUnits = await getDocs(unitsCollection);
+                    for (const unitDoc of existingUnits.docs) {
+                        await deleteDoc(unitDoc.ref);
+                    }
+
+                    // 유닛 데이터 저장
+                    if (building.units && building.units.length > 0) {
+                        for (const unit of building.units) {
+                            const unitData = { ...unit };
+                            delete unitData.id;
+                            await addDoc(collection(window.firebaseDb, `buildings/${docId}/units`), unitData);
+                        }
+                    }
+
+                    console.log(`건물 저장 완료: ${building.name} (ID: ${building.id})`);
+                    return building;
+                } catch (error) {
+                    console.error('건물 저장 오류:', error);
+                    throw error;
+                }
+            };
+
             // Firebase에 건물 데이터 저장
             const saveBuildings = async (buildingsData) => {
                 try {
-                    const { collection, addDoc, updateDoc, doc } = window.firebaseDbMethods;
+                    console.log('Firebase에 건물 데이터 저장 시작...');
 
                     for (const building of buildingsData) {
-                        const buildingData = { ...building };
-                        delete buildingData.units; // units는 별도 컬렉션에 저장
-                        delete buildingData.id; // id는 자동생성되므로 제거
-
-                        if (building.id && building.id.startsWith('firebase_')) {
-                            // 기존 Firebase 문서 업데이트
-                            const docId = building.id.replace('firebase_', '');
-                            await updateDoc(doc(window.firebaseDb, 'buildings', docId), buildingData);
-                        } else {
-                            // 새 문서 추가
-                            const docRef = await addDoc(collection(window.firebaseDb, 'buildings'), buildingData);
-                            building.id = `firebase_${docRef.id}`;
-                        }
-
-                        // 유닛 데이터 저장
-                        if (building.units && building.units.length > 0) {
-                            const docId = building.id.replace('firebase_', '');
-                            for (const unit of building.units) {
-                                const unitData = { ...unit };
-                                delete unitData.id;
-                                await addDoc(collection(window.firebaseDb, `buildings/${docId}/units`), unitData);
-                            }
-                        }
+                        await saveBuildingToFirebase(building);
                     }
 
                     setBuildings(buildingsData);
                     // 로컬 백업도 유지
                     localStorage.setItem('propertyBuildings', JSON.stringify(buildingsData));
+                    console.log('모든 건물 저장 완료');
                 } catch (error) {
                     console.error('Firebase 저장 오류:', error);
                     // Firebase 실패시 localStorage만 사용
