@@ -9,7 +9,8 @@
       "Bash(gh repo edit:*)",
       "Bash(git mv:*)",
       "WebFetch(domain:console.firebase.google.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
