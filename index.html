@@ -12,8 +12,9 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, limit, startAfter, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 
+        // Firebase 설정 - 기존 프로젝트
         const firebaseConfig = {
             apiKey: "AIzaSyCJZtFcoRqfC4R376w9e60dwitqLUL_NBs",
             authDomain: "business-management-e6ce9.firebaseapp.com",
@@ -23,18 +24,103 @@
             appId: "1:483418455510:web:dd909329ae5c2589fc7877"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        if (firebaseConfig) {
+            try {
+                console.log('🔧 Firebase 초기화 시도 중...', {
+                    projectId: firebaseConfig.projectId,
+                    authDomain: firebaseConfig.authDomain,
+                    currentURL: window.location.href
+                });
 
-        // Firebase 인스턴스를 전역으로 사용 가능하게 설정
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
+                // 1단계: Firebase 앱 초기화
+                console.log('1️⃣ Firebase 앱 초기화...');
+                const app = initializeApp(firebaseConfig);
+                console.log('✅ Firebase 앱 초기화 성공');
+
+                // 3단계: Firestore 초기화 (Authentication 건너뛰기)
+                console.log('3️⃣ Firestore 초기화...');
+                const db = getFirestore(app);
+                console.log('✅ Firestore 초기화 성공');
+
+                // Authentication은 필요할 때만 초기화 (지연 초기화)
+                let auth = null;
+                console.log('2️⃣ Authentication 지연 초기화 설정...');
+
+                // 지연 초기화 함수 정의
+                window.getFirebaseAuth = () => {
+                    if (!auth && window.location.protocol !== 'file:') {
+                        try {
+                            auth = getAuth(app);
+                            console.log('✅ Authentication 지연 초기화 성공');
+                        } catch (authError) {
+                            console.warn('⚠️ Authentication 초기화 실패:', authError.message);
+                        }
+                    }
+                    return auth;
+                };
+
+                console.log('✅ Authentication 지연 초기화 준비 완료');
+
+                // Firebase 인스턴스를 전역으로 사용 가능하게 설정
+                window.firebaseAuth = auth;
+                window.firebaseDb = db;
+                console.log('🎉 Firebase 초기화 완료! (Firestore: ✅, Auth:', auth ? '✅' : '❌', ')');
+
+                // file:// 프로토콜 관련 안내
+                if (window.location.protocol === 'file:') {
+                    console.log('💡 완전한 기능을 위해 로컬 서버 사용을 권장:');
+                    console.log('   1. Python: python server.py');
+                    console.log('   2. VS Code: Live Server 확장');
+                    console.log('📊 현재 Firestore 데이터 기능은 정상 작동합니다.');
+                }
+
+            } catch (error) {
+                console.error('❌ Firebase 초기화 실패:', {
+                    message: error.message,
+                    code: error.code,
+                    stack: error.stack
+                });
+
+                // 특정 오류 코드에 따른 해결 방법 안내
+                if (error.code === 'auth/invalid-api-key') {
+                    console.log('💡 해결방법: Firebase 콘솔에서 API 키를 확인하세요.');
+                } else if (error.code === 'auth/project-not-found') {
+                    console.log('💡 해결방법: 프로젝트 ID가 올바른지 확인하세요.');
+                } else if (error.message.includes('CONFIGURATION_NOT_FOUND')) {
+                    console.log('💡 해결방법: Firebase 콘솔에서 웹 앱이 올바르게 설정되었는지 확인하세요.');
+                    console.log('   - 프로젝트 설정 → 일반 → 앱에서 웹 앱 설정 확인');
+                    console.log('   - Authentication → 설정 → 승인된 도메인에 localhost 추가');
+                } else {
+                    console.log('💡 일반적인 해결방법: Firebase 프로젝트 설정을 확인하세요.');
+                }
+
+                console.log('🔄 로컬 스토리지 모드로 전환됩니다.');
+                window.firebaseAuth = null;
+                window.firebaseDb = null;
+            }
+        } else {
+            console.log('⚠️ Firebase 설정이 비활성화됨 - 로컬 스토리지 모드로 동작');
+            window.firebaseAuth = null;
+            window.firebaseDb = null;
+            window.getFirebaseAuth = () => null;
+        }
         window.firebaseAuthMethods = {
-            signInWithEmailAndPassword,
-            createUserWithEmailAndPassword,
-            signOut,
-            onAuthStateChanged
+            signInWithEmailAndPassword: (...args) => {
+                const auth = window.getFirebaseAuth();
+                return auth ? signInWithEmailAndPassword(auth, ...args) : Promise.reject(new Error('Authentication not available'));
+            },
+            createUserWithEmailAndPassword: (...args) => {
+                const auth = window.getFirebaseAuth();
+                return auth ? createUserWithEmailAndPassword(auth, ...args) : Promise.reject(new Error('Authentication not available'));
+            },
+            signOut: () => {
+                const auth = window.getFirebaseAuth();
+                return auth ? signOut(auth) : Promise.reject(new Error('Authentication not available'));
+            },
+            onAuthStateChanged: (callback) => {
+                const auth = window.getFirebaseAuth();
+                return auth ? onAuthStateChanged(auth, callback) : () => {};
+            }
         };
         window.firebaseDbMethods = {
             collection,
@@ -44,7 +130,11 @@
             deleteDoc,
             doc,
             query,
-            where
+            where,
+            limit,
+            startAfter,
+            orderBy,
+            onSnapshot
         };
     </script>
 
@@ -828,11 +918,12 @@
             color: white;
         }
 
-        .status-option.empty.selected { background-color: #6c757d; border-color: #6c757d; }
-        .status-option.confirmed.selected { background-color: #ffc107; border-color: #ffc107; color: #856404; }
-        .status-option.occupied.selected { background-color: #28a745; border-color: #28a745; }
-        .status-option.jeonse.selected { background-color: #17a2b8; border-color: #17a2b8; }
-        .status-option.monthly.selected { background-color: #dc3545; border-color: #dc3545; }
+        .status-option.empty.selected { background-color: #f8f9fa; border-color: #dee2e6; color: #6c757d; }
+        .status-option.business.selected { background-color: #e8d5f7; border-color: #c39bd3; color: #6a1b9a; }
+        .status-option.confirmed.selected { background-color: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .status-option.occupied.selected { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .status-option.jeonse.selected { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        .status-option.monthly.selected { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
 
         .modal-actions {
             display: flex;
@@ -857,11 +948,12 @@
             font-weight: 600;
         }
 
-        .status-badge.empty { background-color: #f8f9fa; color: #6c757d; border: 1px solid #e1e1e1; }
-        .status-badge.confirmed { background-color: #fff3cd; color: #856404; border: 1px solid #ffc107; }
-        .status-badge.occupied { background-color: #d4edda; color: #155724; border: 1px solid #28a745; }
-        .status-badge.jeonse { background-color: #d1ecf1; color: #0c5460; border: 1px solid #17a2b8; }
-        .status-badge.monthly { background-color: #f8d7da; color: #721c24; border: 1px solid #dc3545; }
+        .status-badge.empty { background-color: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
+        .status-badge.business { background-color: #e8d5f7; color: #6a1b9a; border: 1px solid #c39bd3; }
+        .status-badge.confirmed { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status-badge.occupied { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-badge.jeonse { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .status-badge.monthly { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
         .action-select-modal .modal {
             max-width: 300px;
@@ -949,6 +1041,12 @@
             background-color: #f8f9fa;
             border-color: #dee2e6;
             color: #6c757d;
+        }
+
+        .status-legend-tag.business {
+            background-color: #e8d5f7;
+            border-color: #c39bd3;
+            color: #6a1b9a;
         }
 
         .status-legend-tag.confirmed {
@@ -1103,6 +1201,9 @@
 
         .form-field {
             margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .form-field label {
@@ -1110,13 +1211,15 @@
             font-size: 14px;
             font-weight: 600;
             color: #555;
-            margin-bottom: 6px;
+            margin-bottom: 0;
+            min-width: 80px;
+            flex-shrink: 0;
         }
 
         .form-field input,
         .form-field select,
         .form-field textarea {
-            width: 100%;
+            flex: 1;
             padding: 10px 12px;
             border: 1px solid #dee2e6;
             border-radius: 6px;
@@ -1134,6 +1237,32 @@
         .form-field textarea {
             resize: vertical;
             min-height: 80px;
+        }
+
+        /* 메모 필드 전용 스타일 */
+        .form-field.textarea-field textarea {
+            min-height: 120px; /* 메모 필드는 더 크게 */
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
+        .form-field.textarea-field {
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+            grid-column: 1 / -1; /* 그리드의 모든 열을 차지 */
+        }
+
+        .form-field.textarea-field label {
+            margin-bottom: 6px;
+            width: 100%;
+        }
+
+        .form-field.textarea-field textarea {
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .form-row {
@@ -1176,12 +1305,76 @@
             .detail-form {
                 max-height: 70vh;
             }
+
+            /* 모바일에서 메모 필드 최적화 */
+            .form-field.textarea-field textarea {
+                min-height: 100px;
+                font-size: 16px; /* iOS에서 자동 줌 방지 */
+            }
+
+            /* 모바일에서 모달 너비 최적화 */
+            .modal {
+                width: 95vw !important;
+                max-width: none !important;
+                margin: 10px;
+            }
         }
 
         .building-item-actions {
             display: flex;
             gap: 8px;
             margin-top: 12px;
+        }
+
+        /* 로딩 및 더 보기 UI */
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #2c5aa0;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .load-more-button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px;
+            background: linear-gradient(135deg, #2c5aa0 0%, #3498db 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .load-more-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(44, 90, 160, 0.3);
+        }
+
+        .load-more-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .btn-small {
@@ -1466,53 +1659,141 @@
                 ]
             });
 
-            // Firebase에서 데이터 불러오기
+            // 페이지네이션 상태 추가
+            const [buildingsPage, setBuildingsPage] = useState(1);
+            const [lastDoc, setLastDoc] = useState(null);
+            const [hasMoreBuildings, setHasMoreBuildings] = useState(true);
+            const [isLoading, setIsLoading] = useState(false);
+            const BUILDINGS_PER_PAGE = 10; // 한 번에 로드할 건물 수
+
+            // 더 많은 건물 로드 함수
+            const loadMoreBuildings = async () => {
+                if (!hasMoreBuildings || isLoading || !window.firebaseDb || !lastDoc) return;
+
+                setIsLoading(true);
+                try {
+                    const { collection, query, orderBy, limit, startAfter, getDocs } = window.firebaseDbMethods;
+
+                    const nextQuery = query(
+                        collection(window.firebaseDb, 'buildings'),
+                        orderBy('name'),
+                        startAfter(lastDoc),
+                        limit(BUILDINGS_PER_PAGE)
+                    );
+
+                    const snapshot = await getDocs(nextQuery);
+                    const newBuildings = [];
+
+                    for (const doc of snapshot.docs) {
+                        const building = {
+                            id: `firebase_${doc.id}`,
+                            ...doc.data(),
+                            units: [],
+                            unitsLoaded: false
+                        };
+                        newBuildings.push(building);
+                    }
+
+                    console.log(`📥 추가 로드: ${newBuildings.length}개 건물`);
+
+                    setBuildings(prevBuildings => [...prevBuildings, ...newBuildings]);
+                    setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+                    setHasMoreBuildings(snapshot.docs.length === BUILDINGS_PER_PAGE);
+
+                } catch (error) {
+                    console.error('추가 건물 로드 실패:', error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            // Firebase에서 데이터 불러오기 (최적화된 버전)
             useEffect(() => {
                 const loadData = async () => {
-                    // Firebase 연결 확인
-                    if (!window.firebaseDb || !window.firebaseDbMethods) {
-                        console.warn('Firebase가 아직 로드되지 않음, 1초 후 재시도...');
-                        setTimeout(loadData, 1000);
+                    // 로컬 스토리지에서 먼저 확인
+                    const localData = localStorage.getItem('buildings');
+                    if (localData) {
+                        console.log('📦 로컬 스토리지에서 데이터 로드');
+                        const parsedData = JSON.parse(localData);
+                        setBuildings(parsedData);
                         return;
                     }
 
+                    // Firebase 연결 확인
+                    if (!window.firebaseDb || !window.firebaseDbMethods) {
+                        console.warn('⚠️ Firebase 연결 불가, 로컬 스토리지 모드로 동작');
+                        return;
+                    }
+
+                    setIsLoading(true);
                     try {
-                        console.log('Firebase 연결 확인됨, 데이터 로드 시작');
-                        const { collection, getDocs } = window.firebaseDbMethods;
+                        console.log('🔄 Firebase 연결 확인됨, 최적화된 데이터 로드 시작');
+                        const { collection, query, orderBy, limit, onSnapshot, getDocs } = window.firebaseDbMethods;
 
-                        // 건물 데이터 로드
-                        console.log('Firebase에서 건물 데이터 로드 시작...');
-                        const buildingsSnapshot = await getDocs(collection(window.firebaseDb, 'buildings'));
-                        const buildingsData = [];
+                        // 실시간 건물 데이터 리스너 설정 (페이지네이션 적용)
+                        const buildingsQuery = query(
+                            collection(window.firebaseDb, 'buildings'),
+                            orderBy('name'),
+                            limit(BUILDINGS_PER_PAGE)
+                        );
 
-                        console.log(`Firebase에서 ${buildingsSnapshot.docs.length}개 건물 발견`);
+                        console.log(`📋 최대 ${BUILDINGS_PER_PAGE}개 건물을 실시간으로 모니터링`);
 
-                        for (const doc of buildingsSnapshot.docs) {
-                            const building = {
-                                id: `firebase_${doc.id}`, // Firebase ID에 prefix 추가
-                                ...doc.data()
-                            };
+                        // 실시간 리스너 설정
+                        const unsubscribe = onSnapshot(buildingsQuery,
+                            async (snapshot) => {
+                                console.log(`🔄 건물 데이터 업데이트 감지: ${snapshot.docs.length}개 건물`);
+                                const buildingsData = [];
 
-                            console.log(`건물 로드 중: ${building.name} (ID: ${building.id})`);
+                                for (const doc of snapshot.docs) {
+                                    const building = {
+                                        id: `firebase_${doc.id}`,
+                                        ...doc.data()
+                                    };
 
-                            // 각 빌딩의 유닛 데이터도 함께 로드
+                                    console.log(`🏢 로드 중: ${building.name}`);
+
+                                    // 유닛 데이터를 지연 로드 (클릭 시에만)
+                                    building.units = [];
+                                    building.unitsLoaded = false;
+
+                                    buildingsData.push(building);
+                                }
+
+                                console.log(`✅ ${buildingsData.length}개 건물 실시간 로드 완료`);
+                                setBuildings(buildingsData);
+                                setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+                                setHasMoreBuildings(snapshot.docs.length === BUILDINGS_PER_PAGE);
+                                setIsLoading(false);
+                            },
+                            (error) => {
+                                console.error('❌ 실시간 데이터 로드 오류:', error);
+                                setIsLoading(false);
+
+                            }
+                        );
+
+                        // 컴포넌트 언마운트 시 리스너 정리
+                        window.firebaseUnsubscribe = unsubscribe;
+
+                        // 유닛 지연 로드 함수 정의
+                        window.loadBuildingUnits = async (buildingId) => {
+                            if (!window.firebaseDb) return [];
+
                             try {
-                                const unitsSnapshot = await getDocs(collection(window.firebaseDb, `buildings/${doc.id}/units`));
-                                building.units = unitsSnapshot.docs.map(unitDoc => ({
+                                const docId = buildingId.replace('firebase_', '');
+                                const unitsSnapshot = await getDocs(collection(window.firebaseDb, `buildings/${docId}/units`));
+                                const units = unitsSnapshot.docs.map(unitDoc => ({
                                     id: unitDoc.id,
                                     ...unitDoc.data()
                                 }));
-                                console.log(`  - ${building.units.length}개 유닛 로드됨`);
-                            } catch (unitError) {
-                                console.warn(`유닛 로드 실패 (${building.name}):`, unitError);
-                                building.units = [];
+                                console.log(`🏠 지연 로드: ${units.length}개 유닛 (${buildingId})`);
+                                return units;
+                            } catch (error) {
+                                console.warn('유닛 지연 로드 실패:', error);
+                                return [];
                             }
-
-                            buildingsData.push(building);
-                        }
-
-                        console.log(`총 ${buildingsData.length}개 건물 로드 완료`);
-                        setBuildings(buildingsData);
+                        };
 
                         // 유닛 상세 정보 로드
                         try {
@@ -1699,11 +1980,43 @@
                 setShowForm(false);
             };
 
-            // 건물 선택
-            const selectBuilding = (building) => {
+            // 건물 선택 (최적화된 버전)
+            const selectBuilding = async (building) => {
                 setSelectedBuilding(building);
                 setShowForm(false);
                 setActiveTab('units'); // 모바일에서 건물 선택 시 units 탭으로 이동
+
+                // 유닛이 아직 로드되지 않았다면 지연 로드
+                if (!building.unitsLoaded && window.loadBuildingUnits) {
+                    console.log(`🔄 유닛 데이터 지연 로드 시작: ${building.name}`);
+                    setIsLoading(true);
+
+                    try {
+                        const units = await window.loadBuildingUnits(building.id);
+
+                        // 건물 객체에 유닛 데이터 추가
+                        const updatedBuilding = {
+                            ...building,
+                            units: units,
+                            unitsLoaded: true
+                        };
+
+                        // 전체 건물 목록 업데이트
+                        setBuildings(prevBuildings =>
+                            prevBuildings.map(b =>
+                                b.id === building.id ? updatedBuilding : b
+                            )
+                        );
+
+                        // 선택된 건물 업데이트
+                        setSelectedBuilding(updatedBuilding);
+                        console.log(`✅ 유닛 데이터 로드 완료: ${units.length}개`);
+                    } catch (error) {
+                        console.error('유닛 로드 실패:', error);
+                    } finally {
+                        setIsLoading(false);
+                    }
+                }
             };
 
             // 호실 버튼 렌더링
@@ -1800,8 +2113,9 @@
             // 상태 한글명 매핑
             const statusLabels = {
                 empty: '공실',
+                business: '영업중',
                 confirmed: '확인필요',
-                occupied: '입주',
+                occupied: '실거주',
                 jeonse: '전세',
                 monthly: '월세'
             };
@@ -2246,7 +2560,7 @@
                     '건물명', '소재지', '지번', '총층수', '주차대수', '관리비', '주차비',
                     '동명', '층', '호실번호', '점유상태',
                     '상호', '매장번호', '소유자명', '소유자번호',
-                    '희망임대료', '현재임대료', '권리금',
+                    '현재임대료', '희망임대료', '권리금',
                     '전용면적(㎡)', '전용면적(평)', '공급면적(㎡)', '공급면적(평)',
                     '출입문방향', '대로기준위치', '메모'
                 ];
@@ -2281,8 +2595,8 @@
                             details.storeNumber || '',
                             details.ownerName || '',
                             details.ownerPhone || '',
-                            details.desiredRent || '',
                             details.currentRent || '',
+                            details.desiredRent || '',
                             details.premium || '',
                             details.exclusiveArea || '',
                             exclusivePyeong,
@@ -2533,6 +2847,31 @@
                                     {searchTerm ? '검색 결과가 없습니다' : '등록된 건물이 없습니다'}
                                 </div>
                             )}
+
+                            {/* 로딩 상태 표시 */}
+                            {isLoading && (
+                                <div className="loading-indicator">
+                                    <div className="loading-spinner"></div>
+                                    데이터 로드 중...
+                                </div>
+                            )}
+
+                            {/* 더 보기 버튼 */}
+                            {hasMoreBuildings && !isLoading && !searchTerm && (
+                                <button
+                                    className="load-more-button"
+                                    onClick={loadMoreBuildings}
+                                >
+                                    더 많은 건물 보기 ({BUILDINGS_PER_PAGE}개씩)
+                                </button>
+                            )}
+
+                            {/* 모든 데이터 로드 완료 메시지 */}
+                            {!hasMoreBuildings && buildings.length > 0 && !isLoading && !searchTerm && (
+                                <div className="loading-indicator" style={{color: '#28a745'}}>
+                                    ✅ 모든 건물을 로드했습니다 (총 {buildings.length}개)
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -2607,6 +2946,31 @@
                                     {filteredBuildings.length === 0 && (
                                         <div style={{padding: '20px', textAlign: 'center', color: '#666'}}>
                                             {searchTerm ? '검색 결과가 없습니다' : '등록된 건물이 없습니다'}
+                                        </div>
+                                    )}
+
+                                    {/* 로딩 상태 표시 */}
+                                    {isLoading && (
+                                        <div className="loading-indicator">
+                                            <div className="loading-spinner"></div>
+                                            데이터 로드 중...
+                                        </div>
+                                    )}
+
+                                    {/* 더 보기 버튼 */}
+                                    {hasMoreBuildings && !isLoading && !searchTerm && (
+                                        <button
+                                            className="load-more-button"
+                                            onClick={loadMoreBuildings}
+                                        >
+                                            더 많은 건물 보기 ({BUILDINGS_PER_PAGE}개씩)
+                                        </button>
+                                    )}
+
+                                    {/* 모든 데이터 로드 완료 메시지 */}
+                                    {!hasMoreBuildings && buildings.length > 0 && !isLoading && !searchTerm && (
+                                        <div className="loading-indicator" style={{color: '#28a745'}}>
+                                            ✅ 모든 건물을 로드했습니다 (총 {buildings.length}개)
                                         </div>
                                     )}
                                 </div>
@@ -2773,7 +3137,7 @@
 
                     {showModal && selectedUnit && (
                         <div className="modal-overlay" onClick={closeModal}>
-                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal" style={{maxWidth: '800px', width: '90vw'}} onClick={(e) => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <h4 className="modal-title">
                                         {selectedUnit.dongName} {selectedUnit.number}
@@ -3003,7 +3367,7 @@
                     {/* 건물 정보 모달 */}
                     {showBuildingInfoModal && currentBuildingForInfo && (
                         <div className="modal-overlay building-info-modal" onClick={closeBuildingInfoModal}>
-                            <div className="modal" style={{maxWidth: '600px'}} onClick={(e) => e.stopPropagation()}>
+                            <div className="modal" style={{maxWidth: '800px', width: '90vw'}} onClick={(e) => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <h3 className="modal-title">🏢 {currentBuildingForInfo.name} - 건물 정보</h3>
                                     <button className="modal-close" onClick={closeBuildingInfoModal}>×</button>
@@ -3286,7 +3650,6 @@
             return (
                 <div className="detail-form">
                     <div className="modal-section">
-                        <div className="modal-section-title">점유상태 변경</div>
                         <div className="status-selector">
                             {Object.keys(statusLabels).map(s => (
                                 <div
@@ -3301,7 +3664,6 @@
                     </div>
 
                     <div className="modal-section">
-                        <div className="modal-section-title">상세 정보</div>
                         <div className="form-row">
                             <div className="form-field">
                                 <label>상호</label>
@@ -3348,21 +3710,21 @@
 
                         <div className="form-row-3">
                             <div className="form-field">
-                                <label>희망임대료</label>
-                                <input
-                                    type="text"
-                                    value={formData.desiredRent}
-                                    onChange={(e) => handleInputChange('desiredRent', e.target.value)}
-                                    placeholder="예: 100만원"
-                                />
-                            </div>
-                            <div className="form-field">
                                 <label>현재임대료</label>
                                 <input
                                     type="text"
                                     value={formData.currentRent}
                                     onChange={(e) => handleInputChange('currentRent', e.target.value)}
                                     placeholder="예: 80만원"
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>희망임대료</label>
+                                <input
+                                    type="text"
+                                    value={formData.desiredRent}
+                                    onChange={(e) => handleInputChange('desiredRent', e.target.value)}
+                                    placeholder="예: 100만원"
                                 />
                             </div>
                             <div className="form-field">
@@ -3441,7 +3803,7 @@
                             </div>
                         </div>
 
-                        <div className="form-field">
+                        <div className="form-field textarea-field">
                             <label>메모</label>
                             <textarea
                                 value={formData.memo}
@@ -3656,7 +4018,7 @@
                     {/* 기타 */}
                     <div className="modal-section">
                         <div className="modal-section-title">📝 기타</div>
-                        <div className="form-field">
+                        <div className="form-field textarea-field">
                             <label>특이사항</label>
                             <textarea
                                 value={formData.specialNotes || ''}

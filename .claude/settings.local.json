@@ -3,7 +3,13 @@
     "allow": [
       "Bash(git init:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh repo edit:*)",
+      "Bash(git mv:*)",
+      "WebFetch(domain:console.firebase.google.com)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
